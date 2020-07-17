@@ -85,7 +85,6 @@ def isnil(x):
         def inside1(b):
             return f
         return inside1
-    print(x)
     return x(inside)
 
 
@@ -136,7 +135,7 @@ def draw(points):
         cur_point = car(points)
         points = cdr(points)
         x, y = car(cur_point), cdr(cur_point)
-        print(x, y)
+        print(x, y, end="\n\n")
 
 
 class Ap:
