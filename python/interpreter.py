@@ -9,121 +9,123 @@ API_KEY = os.environ['API_KEY']
 SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
 # 18
-def s(x):
-    def s1(y):
-        def s2(z):
-            return x(z)(y(z))
+def s(x_thunk):
+    def s1(y_thunk):
+        def s2(z_thunk):
+            x = x_thunk(())
+            y = y_thunk(())
+            return x(z_thunk)(y(z_thunk))
         return s2
     return s1
 
 
 # 19
-def c(x):
-    def c1(y):
-        def c2(z):
-            return x(z)(y)
+def c(x_thunk):
+    def c1(y_thunk):
+        def c2(z_thunk):
+            return x_thunk(())(z_thunk)(y_thunk)
         return c2
 
     return c1
 
 
 # 20
-def b(x):
-    def b1(y):
-        def b2(z):
-            return x(y(z))
+def b(x_thunk):
+    def b1(y_thunk):
+        def b2(z_thunk):
+            return x_thunk(())(y_thunk(())(z_thunk))
         return b2
 
     return b1
 
 
 #21
-def t(x):
-    def t1(y):
-        return x
+def t(x_thunk):
+    def t1(y_thunk):
+        return x_thunk
 
     return t1
 
 
 #22
-def f(x):
-    def f1(y):
-        return y
+def f(x_thunk):
+    def f1(y_thunk):
+        return y_thunk
     return f1
 
 
 #24
-def i(x):
-    return x
+def i(x_thunk):
+    return x_thunk
 
 
 #25
-def cons(x):
-    def cons1(y):
-        def cons2(foo):
-            return foo(x)(y)
+def cons(x_thunk):
+    def cons1(y_thunk):
+        def cons2(foo_thunk):
+            return foo_thunk(())(x_thunk)(y_thunk)
         return cons2
     return cons1
 
 
 #26
-def car(x):
-    return x(t)
+def car(x_thunk):
+    return x_thunk(())(t)
 
 
 #27
-def cdr(x):
-    return x(f)
+def cdr(x_thunk):
+    return x_thunk(())(f)
 
 
 #28
-def nil(x):
+def nil(x_thunk):
     return t
 
 
-def neg(x):
-    return -x
+def neg(x_thunk):
+    return -x_thunk()
 
 
-def isnil(x):
+def isnil(x_thunk):
     def inside(a):
         def inside1(b):
             return f
         return inside1
-    return x(inside)
+    return x_thunk()(inside)
 
 
-def eq(a):
-    def eq1(b):
-        assert(isinstance(a, int) and isinstance(b, int))
-        return t if a == b else f
+def eq(a_thunk):
+    def eq1(b_thunk):
+        assert(isinstance(a_thunk(), int) and isinstance(b_thunk(), int))
+        return t if a_thunk() == b_thunk() else f
 
     return eq1
 
 
-def mul(a):
-    def mul1(b):
-        return a * b
+def mul(a_thunk):
+    def mul1(b_thunk):
+        return a_thunk() * b_thunk()
 
     return mul1
 
 
-def add(a):
-    def add1(b):
-        return a + b
+def add(a_thunk):
+    def add1(b_thunk):
+        return a_thunk() + b_thunk()
     return add1
 
 
-def lt(a):
-    def lt1(b):
-        return t if a < b else f
+def lt(a_thunk):
+    def lt1(b_thunk):
+        return t if a_thunk() < b_thunk() else f
     return lt1
 
 
-def div(a):
-    def div1(b):
+def div(a_thunk):
+    def div1(b_thunk):
         #TODO
-        return int(float(a) / b)
+        return int(float(a_thunk()) / b_thunk())
     return div1
 
 
@@ -144,18 +146,24 @@ def f38(protocol, triple):
     if flag == 0:
         return newState, data
     else:
-        return interact(protocol, newState, send(data))
+        return interact(protocol)(newState)(send(data))
 
 
-def interact(protocol, state, data):
-    return f38(protocol, protocol(state)(data))
+def interact(protocol):
+    def interact1(state):
+        def interact2(data):
+            return f38(protocol, protocol(state)(data))
+        return interact2
+
+    return interact1
 
 
-def evaluate(term, function_dict):
+def evaluate(term_thunk, function_thunk_dict):
+    term = term_thunk(())
     if isinstance(term, str):
-        term = function_dict[term]
+        term = function_thunk_dict[term](())
     while isinstance(term, Ap):
-        term = term.evaluate(function_dict)
+        term = term.evaluate(function_thunk_dict)
     return term
 
 
@@ -189,15 +197,9 @@ class Ap:
         self.rhs = rhs
 
     def evaluate(self, function_dict):
-        lhs = self.lhs
-        rhs = self.rhs
-        if isinstance(lhs, str):
-            lhs = function_dict[lhs]
-        lhs = evaluate(lhs, function_dict)
-        if isinstance(rhs, str):
-            rhs = function_dict[rhs]
-        rhs = evaluate(rhs, function_dict)
-        return lhs(rhs)
+        lhs = evaluate(self.lhs, function_dict)
+        rhs_thunk = self.rhs
+        return lhs(lambda x: evaluate(rhs_thunk, function_dict))
 
 
 def is_int(string):
@@ -212,32 +214,31 @@ def parse(tokens):
     if tok == "ap":
         lhs, cont1 = parse(rem)
         rhs, cont2 = parse(cont1)
-        return Ap(lhs, rhs), cont2
+        return (lambda x: Ap(lhs, rhs)), cont2
     elif is_int(tok):
-        return int(tok), rem
-    elif tok[0] == ":":
-        return tok, rem
-    elif tok == "nil":
-        return nil, rem
+        return (lambda x: int(tok)), rem
+    elif tok[0] == ":" or tok == 'galaxy':
+        return (lambda x: tok), rem
     else:
         if tok in globals():
-            return globals()[tok], rem
+            return (lambda x: globals()[tok]), rem
         print("FAIL", tok)
         exit()
-        return tok, rem
+        return (lambda x: tok), rem
 
 
 def main():
-    function_dict = {}
-    for line in sys.stdin:
+    file = open('galaxy.txt', 'r')
+    function_thunk_dict = {}
+    for line in file:
         if line[-1] == "\n":
             line = line[:-1]
         split = line.split("=")
         name = split[0].strip()
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
-        function_dict[name] = parsed[0]
-    print(evaluate(function_dict["galaxy"], function_dict))
+        function_thunk_dict[name] = parsed[0]
+    print(evaluate(function_thunk_dict["galaxy"], function_thunk_dict))
 
 
 if __name__ == "__main__":
