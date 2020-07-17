@@ -123,6 +123,25 @@ def div(a):
     return div1
 
 
+def send(data):
+    return ()
+
+
+def f38(protocol, triple):
+    flag = car(triple)
+    newState = car(cdr(triple))
+    data = cdr(cdr(cdr(triple)))
+
+    if flag == 0:
+        return newState, data
+    else:
+        return interact(protocol, newState, send(data))
+
+
+def interact(protocol, state, data):
+    return f38(protocol, protocol(state)(data))
+
+
 def evaluate(term, function_dict):
     if isinstance(term, str):
         term = function_dict[term]
