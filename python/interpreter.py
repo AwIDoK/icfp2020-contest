@@ -1,4 +1,5 @@
 import sys
+from PIL import Image
 
 sys.setrecursionlimit(100000)
 
@@ -131,11 +132,27 @@ def evaluate(term, function_dict):
 
 
 def draw(points):
+    max_cell = 15
+    cell_size = 60
+    side = max_cell * cell_size
+    img = Image.new('RGB', (side, side))
+    pixels = img.load()
     while isnil(points)(False)(True):
         cur_point = car(points)
         points = cdr(points)
         x, y = car(cur_point), cdr(cur_point)
-        print(x, y, end="\n\n")
+        assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
+        for xi in range(x * cell_size, x * cell_size + cell_size):
+            for yi in range(y * cell_size, y * cell_size + cell_size):
+                pixels[xi, yi] = (255, 255, 255)
+    img.show()
+
+
+def multipledraw(images):
+    while isnil(images)(False)(True):
+        cur_image = car(images)
+        images = cdr(images)
+        draw(cur_image)
 
 
 class Ap:
