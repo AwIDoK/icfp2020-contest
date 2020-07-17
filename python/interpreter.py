@@ -134,9 +134,9 @@ class Ap:
         lhs = self.lhs
         rhs = self.rhs
         if isinstance(lhs, str):
-            lhs = evaluate(function_dict[lhs])
+            lhs = evaluate(function_dict[lhs], function_dict)
         if isinstance(rhs, str):
-            rhs = evaluate(function_dict[rhs])
+            rhs = evaluate(function_dict[rhs], function_dict)
         return lhs(rhs)
 
 
