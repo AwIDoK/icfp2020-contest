@@ -81,11 +81,17 @@ def neg(x):
 
 
 def isnil(x):
-    return t if x == () else f
+    def inside(a):
+        def inside1(b):
+            return f
+        return inside1
+    print(x)
+    return x(inside)
 
 
 def eq(a):
     def eq1(b):
+        assert(isinstance(a, int) and isinstance(b, int))
         return t if a == b else f
 
     return eq1
@@ -125,6 +131,14 @@ def evaluate(term, function_dict):
     return term
 
 
+def draw(points):
+    while isnil(points)(False)(True):
+        cur_point = car(points)
+        points = cdr(points)
+        x, y = car(cur_point), cdr(cur_point)
+        print(x, y)
+
+
 class Ap:
     def __init__(self, lhs, rhs):
         self.lhs = lhs
@@ -160,7 +174,7 @@ def parse(tokens):
     elif tok[0] == ":":
         return tok, rem
     elif tok == "nil":
-        return (), rem
+        return nil, rem
     else:
         if tok in globals():
             return globals()[tok], rem
@@ -179,7 +193,6 @@ def main():
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
         function_dict[name] = parsed[0]
-
     print(evaluate(function_dict["galaxy"], function_dict))
 
 
