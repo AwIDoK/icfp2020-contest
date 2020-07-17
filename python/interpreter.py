@@ -2,6 +2,7 @@ import sys
 
 sys.setrecursionlimit(100000)
 
+
 # 18
 def s(x):
     def s1(y):
@@ -54,22 +55,25 @@ def i(x):
 #25
 def cons(x):
     def cons1(y):
-        return (x, y)
+        def cons2(foo):
+            return foo(x)(y)
+        return cons2
     return cons1
 
 
 #26
 def car(x):
-    return x[0]
+    return x(t)
 
 
 #27
 def cdr(x):
-    return x[1]
+    return x(f)
 
 
 #28
-nil = ()
+def nil(x):
+    return t
 
 
 def neg(x):
@@ -80,25 +84,37 @@ def isnil(x):
     return t if x == () else f
 
 
-def eq(a, b):
-    return t if a == b else f
+def eq(a):
+    def eq1(b):
+        return t if a == b else f
+
+    return eq1
 
 
-def mul(a, b):
-    return a * b
+def mul(a):
+    def mul1(b):
+        return a * b
+
+    return mul1
 
 
-def add(a, b):
-    return a + b
+def add(a):
+    def add1(b):
+        return a + b
+    return add1
 
 
-def lt(a, b):
-    return t if a < b else f
+def lt(a):
+    def lt1(b):
+        return t if a < b else f
+    return lt1
 
 
-def div(a, b):
-    #TODO
-    return int(float(a)/b)
+def div(a):
+    def div1(b):
+        #TODO
+        return int(float(a) / b)
+    return div1
 
 
 def evaluate(term, function_dict):
@@ -167,4 +183,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
