@@ -103,7 +103,7 @@ def div(a, b):
 
 def evaluate(term, function_dict):
     if isinstance(term, Ap):
-        return term.evaluate(Ap)
+        return term.evaluate(function_dict)
     if isinstance(term, str):
         return function_dict[term]
     return term
