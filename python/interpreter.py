@@ -8,13 +8,22 @@ sys.setrecursionlimit(100000)
 API_KEY = os.environ['API_KEY']
 SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
+def extract(x):
+    if isinstance(x, tuple):
+        return extract(x[0](())) # should work without extract
+    return x
+
+
 # 18
 def s(x_thunk):
     def s1(y_thunk):
         def s2(z_thunk):
-            x = x_thunk(())
-            y = y_thunk(())
-            return x(z_thunk)(y(z_thunk))
+            x = extract(x_thunk)
+            def ap(x):
+                y = extract(y_thunk)
+                return y(z_thunk)
+            ap_thunk = (ap,)
+            return x(z_thunk)(ap_thunk)
         return s2
     return s1
 
@@ -23,7 +32,8 @@ def s(x_thunk):
 def c(x_thunk):
     def c1(y_thunk):
         def c2(z_thunk):
-            return x_thunk(())(z_thunk)(y_thunk)
+            x = extract(x_thunk)
+            return x(z_thunk)(y_thunk)
         return c2
 
     return c1
@@ -33,7 +43,12 @@ def c(x_thunk):
 def b(x_thunk):
     def b1(y_thunk):
         def b2(z_thunk):
-            return x_thunk(())(y_thunk(())(z_thunk))
+            x = extract(x_thunk)
+            def ap(x):
+                y = extract(y_thunk)
+                return y(z_thunk)
+            ap_thunk = (ap,)
+            return x(ap_thunk)
         return b2
 
     return b1
@@ -63,19 +78,19 @@ def i(x_thunk):
 def cons(x_thunk):
     def cons1(y_thunk):
         def cons2(foo_thunk):
-            return foo_thunk(())(x_thunk)(y_thunk)
+            return extract(foo_thunk)(x_thunk)(y_thunk)
         return cons2
     return cons1
 
 
 #26
 def car(x_thunk):
-    return x_thunk(())(t)
+    return extract(x_thunk)(t)
 
 
 #27
 def cdr(x_thunk):
-    return x_thunk(())(f)
+    return extract(x_thunk)(f)
 
 
 #28
@@ -84,7 +99,7 @@ def nil(x_thunk):
 
 
 def neg(x_thunk):
-    return -x_thunk()
+    return -extract(x_thunk)
 
 
 def isnil(x_thunk):
@@ -92,40 +107,40 @@ def isnil(x_thunk):
         def inside1(b):
             return f
         return inside1
-    return x_thunk()(inside)
+    return extract(x_thunk)(inside)
 
 
 def eq(a_thunk):
     def eq1(b_thunk):
-        assert(isinstance(a_thunk(), int) and isinstance(b_thunk(), int))
-        return t if a_thunk() == b_thunk() else f
+        assert(isinstance(extract(a_thunk), int) and isinstance(extract(b_thunk), int))
+        return t if extract(a_thunk) == extract(b_thunk) else f
 
     return eq1
 
 
 def mul(a_thunk):
     def mul1(b_thunk):
-        return a_thunk() * b_thunk()
+        return extract(a_thunk) * extract(b_thunk)
 
     return mul1
 
 
 def add(a_thunk):
     def add1(b_thunk):
-        return a_thunk() + b_thunk()
+        return extract(a_thunk) + extract(b_thunk)
     return add1
 
 
 def lt(a_thunk):
     def lt1(b_thunk):
-        return t if a_thunk() < b_thunk() else f
+        return t if extract(a_thunk) < extract(b_thunk) else f
     return lt1
 
 
 def div(a_thunk):
     def div1(b_thunk):
         #TODO
-        return int(float(a_thunk()) / b_thunk())
+        return int(float(extract(a_thunk)) / extract(b_thunk))
     return div1
 
 
@@ -138,32 +153,33 @@ def send(data):
     return response.content.decode("utf-8")
 
 
-def f38(protocol, triple):
-    flag = car(triple)
-    newState = car(cdr(triple))
-    data = cdr(cdr(cdr(triple)))
+def f38(protocol_thunk, triple_thunk):
+    flag = car(triple_thunk)
+    newState = car(cdr(triple_thunk))
+    data = cdr(cdr(cdr(triple_thunk)))
 
     if flag == 0:
         return newState, data
     else:
-        return interact(protocol)(newState)(send(data))
+        return interact(protocol_thunk)(newState)(send(data))
 
 
-def interact(protocol):
-    def interact1(state):
-        def interact2(data):
-            return f38(protocol, protocol(state)(data))
+def interact(protocol_thunk):
+    def interact1(state_thunk):
+        def interact2(data_thunk):
+            protocol = extract(protocol_thunk)
+            return f38(protocol_thunk, protocol(state_thunk)(data_thunk))
         return interact2
 
     return interact1
 
 
 def evaluate(term_thunk, function_thunk_dict):
-    term = term_thunk(())
+    term = extract(term_thunk)
     if isinstance(term, str):
-        term = function_thunk_dict[term](())
-    while isinstance(term, Ap):
-        term = term.evaluate(function_thunk_dict)
+        return evaluate(function_thunk_dict[term], function_thunk_dict)
+    if isinstance(term, Ap):
+        return term.evaluate(function_thunk_dict)
     return term
 
 
@@ -214,17 +230,17 @@ def parse(tokens):
     if tok == "ap":
         lhs, cont1 = parse(rem)
         rhs, cont2 = parse(cont1)
-        return (lambda x: Ap(lhs, rhs)), cont2
+        return (lambda x: Ap(lhs, rhs),), cont2
     elif is_int(tok):
-        return (lambda x: int(tok)), rem
+        return (lambda x: int(tok),), rem
     elif tok[0] == ":" or tok == 'galaxy':
-        return (lambda x: tok), rem
+        return (lambda x: tok,), rem
     else:
         if tok in globals():
-            return (lambda x: globals()[tok]), rem
+            return (lambda x: globals()[tok],), rem
         print("FAIL", tok)
         exit()
-        return (lambda x: tok), rem
+        return (lambda x: tok,), rem
 
 
 def main():
@@ -238,7 +254,7 @@ def main():
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
-    print(evaluate(function_thunk_dict["galaxy"], function_thunk_dict))
+    print(evaluate(function_thunk_dict["inter"], function_thunk_dict))
 
 
 if __name__ == "__main__":
