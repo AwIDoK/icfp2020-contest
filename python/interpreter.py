@@ -118,10 +118,10 @@ def div(a):
 
 
 def evaluate(term, function_dict):
-    if isinstance(term, Ap):
-        return term.evaluate(function_dict)
     if isinstance(term, str):
-        return function_dict[term]
+        term = function_dict[term]
+    while isinstance(term, Ap):
+        term = term.evaluate(function_dict)
     return term
 
 
@@ -134,9 +134,11 @@ class Ap:
         lhs = self.lhs
         rhs = self.rhs
         if isinstance(lhs, str):
-            lhs = evaluate(function_dict[lhs], function_dict)
+            lhs = function_dict[lhs]
+        lhs = evaluate(lhs, function_dict)
         if isinstance(rhs, str):
-            rhs = evaluate(function_dict[rhs], function_dict)
+            rhs = function_dict[rhs]
+        rhs = evaluate(rhs, function_dict)
         return lhs(rhs)
 
 
