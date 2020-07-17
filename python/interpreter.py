@@ -101,9 +101,11 @@ def div(a, b):
     return int(float(a)/b)
 
 
-def evaluate(term):
+def evaluate(term, function_dict):
     if isinstance(term, Ap):
         return term.evaluate(Ap)
+    if isinstance(term, str):
+        return function_dict[term]
     return term
 
 
@@ -150,14 +152,15 @@ def parse(tokens):
 def main():
     function_dict = {}
     for line in sys.stdin:
-        line = line[:-1]
+        if line[-1] == "\n":
+            line = line[:-1]
         split = line.split("=")
         name = split[0].strip()
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
         function_dict[name] = parsed[0]
 
-    print(evaluate(function_dict["galaxy"]))
+    print(evaluate(function_dict["galaxy"], function_dict))
 
 
 if __name__ == "__main__":
