@@ -1,3 +1,7 @@
+import sys
+
+sys.setrecursionlimit(100000)
+
 # 18
 def s(x):
     def s1(y):
@@ -68,18 +72,94 @@ def cdr(x):
 nil = ()
 
 
+def neg(x):
+    return -x
+
+
+def isnil(x):
+    return t if x == () else f
+
+
+def eq(a, b):
+    return t if a == b else f
+
+
+def mul(a, b):
+    return a * b
+
+
+def add(a, b):
+    return a + b
+
+
+def lt(a, b):
+    return t if a < b else f
+
+
+def div(a, b):
+    #TODO
+    return int(float(a)/b)
+
+
+def evaluate(term):
+    if isinstance(term, Ap):
+        return term.evaluate(Ap)
+    return term
+
+
+class Ap:
+    def __init__(self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def evaluate(self, function_dict):
+        if isinstance(self.lhs, str):
+            lhs = evaluate(function_dict[lhs])
+        if isinstance(self.rhs, str):
+            rhs = evaluate(function_dict[rhs])
+        return lhs(rhs)
+
+
+def is_int(string):
+    if string[0] == "-":
+        return string[1:].isdigit()
+    return string.isdigit()
+
+
 def parse(tokens):
     tok = tokens[0]
     rem = tokens[1:]
     if tok == "ap":
         lhs, cont1 = parse(rem)
         rhs, cont2 = parse(cont1)
-        return lhs(rhs), cont2
-    elif tok == "cons":
-        return cons, rem
+        return Ap(lhs, rhs), cont2
+    elif is_int(tok):
+        return int(tok), rem
+    elif tok[0] == ":":
+        return tok, rem
+    elif tok == "nil":
+        return (), rem
     else:
+        if tok in globals():
+            return globals()[tok], rem
+        print("FAIL", tok)
+        exit()
         return tok, rem
 
 
+def main():
+    function_dict = {}
+    for line in sys.stdin:
+        line = line[:-1]
+        split = line.split("=")
+        name = split[0].strip()
+        parsed = parse(split[1].strip().split(" "))
+        assert(parsed[1] == [])
+        function_dict[name] = parsed[0]
+
+    print(evaluate(function_dict["galaxy"]))
+
+
 if __name__ == "__main__":
-    print(parse(input().split()))
+    main()
+    
