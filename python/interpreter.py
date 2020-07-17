@@ -115,9 +115,11 @@ class Ap:
         self.rhs = rhs
 
     def evaluate(self, function_dict):
-        if isinstance(self.lhs, str):
+        lhs = self.lhs
+        rhs = self.rhs
+        if isinstance(lhs, str):
             lhs = evaluate(function_dict[lhs])
-        if isinstance(self.rhs, str):
+        if isinstance(rhs, str):
             rhs = evaluate(function_dict[rhs])
         return lhs(rhs)
 
