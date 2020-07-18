@@ -53,7 +53,11 @@ def interact(protocol_thunk):
     return interact1
 
 
+img_id = 0
+
 def draw(points):
+    global img_id
+    img_id += 1
     max_cell = 60
     cell_size = 10
     side = max_cell * cell_size
@@ -71,7 +75,7 @@ def draw(points):
         for xi in range(x * cell_size, x * cell_size + cell_size):
             for yi in range(y * cell_size, y * cell_size + cell_size):
                 pixels[xi, yi] = (255, 255, 255)
-    img.show()
+    img.save("{}.png".format(img_id), "PNG")
 
 
 def multipledraw(images):
