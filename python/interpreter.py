@@ -13,6 +13,7 @@ from PIL import Image, ImageTk
 from decoder import decode, decode_to_alien_string
 from alien_functions import *
 from alien_python import *
+from strategy import *
 
 sys.setrecursionlimit(100000)
 
@@ -88,23 +89,26 @@ global_function_thunk_dict = {}
 
 
 def send(data):
-    encoded_data = encode_alien(data)
-    print("encoded", encoded_data)
+    return decode_alien(send_encoded(encode_alien(data)))[0]
+
+
+def send_encoded(encoded_data):
+    # print("encoded", encoded_data)
+    print('sending', try_describe(decode_to_python(encoded_data)[0]))
 
     params = {
         "apiKey": API_KEY
     }
     response = requests.post(SEND_URL, params=params, data=encoded_data)
-    assert(response.status_code == 200)
+    assert (response.status_code == 200)
 
     encoded_response = response.content.decode("utf-8")
-    print('received', encoded_response)
-    print('decoded to', decode(encoded_response)[0])
-    alien = decode_alien(encoded_response)
+    # print('received', encoded_response)
+    print('received', decode_to_python(encoded_response)[0])
 
-    print('send time', time.time() - start_time)
+    # print('send time', time.time() - start_time)
 
-    return alien[0]
+    return encoded_response
 
 
 def f38(protocol_thunk, triple_thunk):
@@ -219,6 +223,8 @@ def parse(tokens):
     elif is_int(tok):
         return int(tok), rem
     elif tok[0] == ":" or tok == 'galaxy':
+        if tok in global_function_thunk_dict:
+            return global_function_thunk_dict[tok], rem
         return tok, rem
     else:
         if tok in globals():
@@ -258,7 +264,7 @@ def main():
     start_time = time.time()
 
     file = open('galaxy.txt', 'r')
-    function_thunk_dict = {}
+    global global_function_thunk_dict
     for line in file:
         if line[-1] == "\n":
             line = line[:-1]
@@ -266,10 +272,7 @@ def main():
         name = split[0].strip()
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
-        function_thunk_dict[name] = parsed[0]
-
-    global global_function_thunk_dict
-    global_function_thunk_dict = function_thunk_dict
+        global_function_thunk_dict[name] = parsed[0]
 
     run_interact(0, 0)
 
@@ -279,3 +282,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# battle 110110011011110110010111011010001101111111111111111100100000000000110010001001111110101110011101101001111110100111110110101101110000100001101011001100110110010011110110100011001111111101100001110110000111110111000010000011100101011011110100101111011100010000011010110101101100001001101011011100100000011011000010011000011111101011010111101101000011100010010011110110000101100100111101100010110101101100100110110000100110111000111100110111001000000110110000100110000000011110111000010000110101111011110001000000000110110000111011100100000000110011000011001100001101101000110000
+# 110110011011110110011011011010001101111111111111111010101110010100011100010011010101001001001100011111000001001111010110111000010001110101100110011011001001111010110011111111011000011101100001111101110001100000101111010010111101111000011010011111010110101101100001001101110010000001101110010000001101100001001100001111110101101011110111000010000010111101001011110101101110010101101101101011110110000100110101101110010000001101100001001100000000111101100100110101111011110001000000000110110000111011100100000000110011000011001100001101101000110000
