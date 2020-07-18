@@ -16,7 +16,7 @@ def decode_alien(encoded):
             return "0", remainder[1:]
         else:
             number = remainder[pos + 1: pos + 1 + 4 * pos]
-            return str(int(number, 2)), remainder[pos + 1 + 4 * pos:]
+            return int(number, 2), remainder[pos + 1 + 4 * pos:]
     elif prefix == "10":
         # negative
         pos = remainder.find("0")
@@ -24,7 +24,7 @@ def decode_alien(encoded):
             return "0", remainder[1:]
         else:
             number = remainder[pos + 1: pos + 1 + 4 * pos]
-            return str(-int(number, 2)), remainder[pos + 1 + 4 * pos:]
+            return -int(number, 2), remainder[pos + 1 + 4 * pos:]
     elif prefix == "00":
         # empty list
         return nil, remainder

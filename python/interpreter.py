@@ -24,7 +24,8 @@ def send(data):
     assert(response.status_code == 200)
 
     encoded_response = response.content.decode("utf-8")
-    print(decode(encoded_response)[0])
+    print('received', encoded_response)
+    print('decoded to', decode(encoded_response)[0])
     alien = decode_alien(encoded_response)
     return alien[0]
 
