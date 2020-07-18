@@ -13,7 +13,7 @@ def s(x_thunk):
                 y = extract(y_thunk)
                 return y(z_thunk)
             ap_thunk = (ap,)
-            return x(z_thunk)(ap_thunk)
+            return extract(x(z_thunk))(ap_thunk)
         return s2
     return s1
 
@@ -23,7 +23,7 @@ def c(x_thunk):
     def c1(y_thunk):
         def c2(z_thunk):
             x = extract(x_thunk)
-            return x(z_thunk)(y_thunk)
+            return extract(x(z_thunk))(y_thunk)
         return c2
 
     return c1

@@ -43,7 +43,7 @@ def encode_alien(decoded) -> str:
         padded_number = '0' * padding_size + number
         length = len(padded_number) // 4
         return prefix + ('1' * length) + '0' + padded_number
-    elif isnil(decoded):
+    elif isnil(decoded)(True)(False):
         # empty list
         return '00'
     else:

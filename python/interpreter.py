@@ -15,6 +15,8 @@ SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
 def send(data):
     encoded_data = encode_alien(data)
+    print("encoded", encoded_data)
+
     params = {
         "apiKey": API_KEY
     }
@@ -30,7 +32,7 @@ def send(data):
 def f38(protocol_thunk, triple_thunk):
     flag = car(triple_thunk)
     newState = car(cdr(triple_thunk))
-    data = cdr(cdr(cdr(triple_thunk)))
+    data = car(cdr(cdr(triple_thunk)))
 
     if flag == 0:
         return newState, data
@@ -89,7 +91,8 @@ class Ap:
     def evaluate(self, function_dict):
         lhs = evaluate(self.lhs, function_dict)
         rhs_thunk = self.rhs
-        return lhs(lambda x: evaluate(rhs_thunk, function_dict))
+        eval_thunk = (lambda x: evaluate(rhs_thunk, function_dict)),
+        return lhs(eval_thunk)
 
 
 def is_int(string):
