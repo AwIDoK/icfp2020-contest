@@ -65,8 +65,8 @@ img_id = 0
 def draw(points):
     global img_id
     img_id += 1
-    max_cell = 60
-    cell_size = 10
+    max_cell = 400
+    cell_size = 1
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
@@ -75,8 +75,8 @@ def draw(points):
         points = extract(cdr(points))
         x, y = extract(car(cur_point)), extract(cdr(cur_point))
 
-        x += 30
-        y += 30
+        x += 200
+        y += 200
 
         assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
         for xi in range(x * cell_size, x * cell_size + cell_size):
@@ -139,17 +139,21 @@ def parse(tokens):
 
 
 def run_interact(coord1, coord2, state, function_thunk_dict):
+    print('starting from', coord1, coord2)
     prev_state = ''
     new_state = encode_alien(extract(state))
     cur_state = state
 
-    while prev_state != new_state:
+    while True:
         def run(x):
             return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
 
         prev_state = new_state
         cur_state = evaluate((run,), function_thunk_dict)
         new_state = encode_alien(cur_state)
+        print('state_enc:', new_state)
+        print('state:', decode_to_alien_string(new_state)[0])
+        print('state dec', decode(new_state)[0])
 
 
 def main():
@@ -167,7 +171,24 @@ def main():
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
 
-    run_interact(0, 0, nil, function_thunk_dict)
+    # 8, 4, decode_alien('11011000011111011001000011010110000')[0]
+    # 2, -8, decode_alien('11011000011111011001010011010110000')[0]
+    # 3, 6, decode_alien('11011000011111011001100011010110000')[0]
+    # 0, -14, decode_alien('11011000011111011001110011010110000')[0]
+    # -4, 10, decode_alien('11011000011111011010000011010110000')[0]
+    # 9, -3, decode_alien('11011000011111011010010011010110000')[0]
+    # -4, 10, decode_alien('11011000011111011010100011010110000')[0]
+    run_interact(0, 72, decode_alien('110110001011110110000111101000010011010110000')[0], function_thunk_dict)
+    # for coord1 in range(1, 15):
+    #     run_interact(0, coord1, nil, function_thunk_dict)
+    #     run_interact(0, -coord1, nil, function_thunk_dict)
+    #     run_interact(coord1, 0, nil, function_thunk_dict)
+    #     run_interact(-coord1, 0, nil, function_thunk_dict)
+    #     for coord2 in range(1, 15):
+    #         run_interact(coord1, coord2, nil, function_thunk_dict)
+    #         run_interact(-coord1, coord2, nil, function_thunk_dict)
+    #         run_interact(coord1, -coord2, nil, function_thunk_dict)
+    #         run_interact(-coord1, -coord2, nil, function_thunk_dict)
 
 
 if __name__ == "__main__":
