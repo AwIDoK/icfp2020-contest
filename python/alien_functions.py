@@ -1,8 +1,14 @@
-def extract(x):
-    if isinstance(x, tuple):
-        return extract(x[0](())) # should work without extract
-    return x
+memorized = {}
 
+def extract(x):
+    if x in memorized:
+        return memorized[x]
+    if isinstance(x, tuple):
+        result = extract(x[0](())) # should work without extract
+    else:
+        result = x
+    memorized[x] = result
+    return result
 
 # 18
 def s(x_thunk):
