@@ -1,7 +1,9 @@
 import os
+import json
 import time
 from tkinter import *
 import gc
+import pickle
 
 import requests
 import sys
@@ -18,14 +20,53 @@ SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
 start_time = 0
 
+X = 0
+Y = 0
+
 
 def click_processor(event: Event):
-    x = event.x // 3 - 200
-    y = event.y // 3 - 200
+    global X, Y
+    x = event.x // 3 - 150
+    y = event.y // 3 - 150
+    X = x
+    Y = y
     run_interact(x, y)
 
 
 window = Tk()
+window.geometry("900x900")
+window.resizable(0, 0)
+
+
+def save():
+    global global_state, X, Y
+    print("saving")
+    state = {
+        "x": X,
+        "y": Y,
+        "state": encode_alien(global_state)
+    }
+    with open("save.txt", "w") as f:
+        json.dump(state, f)
+
+
+def load():
+    global global_state, X, Y
+    print("loading")
+    with open("save.txt", "r") as f:
+        state = json.load(f)
+    X = state["x"]
+    Y = state["y"]
+    global_state = decode_alien(state["state"])[0]
+    run_interact(X, Y)
+
+menubar = Menu(window)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="Save", command=save)
+filemenu.add_command(label="Load", command=load)
+menubar.add_cascade(label="File", menu=filemenu)
+window.config(menu=menubar)
+
 panel = Label(window)
 panel.bind('<Button-1>', click_processor)
 panel.pack()
@@ -83,7 +124,7 @@ img_id = 0
 def draw(points_list):
     global img_id
     img_id += 1
-    max_cell = 400
+    max_cell = 300
     cell_size = 3
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
@@ -98,8 +139,8 @@ def draw(points_list):
             points = extract(cdr(points))
             x, y = extract(car(cur_point)), extract(cdr(cur_point))
 
-            x += 200
-            y += 200
+            x += 150
+            y += 150
 
             assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
             for xi in range(x * cell_size, x * cell_size + cell_size):
