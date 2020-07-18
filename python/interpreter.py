@@ -35,10 +35,12 @@ def f38(protocol_thunk, triple_thunk):
     newState = car(cdr(triple_thunk))
     data = car(cdr(cdr(triple_thunk)))
 
-    if flag == 0:
-        return newState, data
+    if extract(flag) == 0:
+        multipledraw(extract(data))
+        return decode(encode_alien(extract(newState)))[0]
     else:
-        return interact(protocol_thunk)(newState)(send(data))
+        n_data = send(data)
+        return interact(protocol_thunk)(newState)(n_data)
 
 
 def interact(protocol_thunk):
@@ -52,15 +54,19 @@ def interact(protocol_thunk):
 
 
 def draw(points):
-    max_cell = 15
-    cell_size = 60
+    max_cell = 60
+    cell_size = 10
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
     while isnil(points)(False)(True):
-        cur_point = car(points)
-        points = cdr(points)
-        x, y = car(cur_point), cdr(cur_point)
+        cur_point = extract(car(points))
+        points = extract(cdr(points))
+        x, y = extract(car(cur_point)), extract(cdr(cur_point))
+
+        x += 30
+        y += 30
+
         assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
         for xi in range(x * cell_size, x * cell_size + cell_size):
             for yi in range(y * cell_size, y * cell_size + cell_size):
@@ -70,8 +76,8 @@ def draw(points):
 
 def multipledraw(images):
     while isnil(images)(False)(True):
-        cur_image = car(images)
-        images = cdr(images)
+        cur_image = extract(car(images))
+        images = extract(cdr(images))
         draw(cur_image)
 
 
