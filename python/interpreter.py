@@ -1,6 +1,7 @@
 import os
 import time
 from tkinter import *
+import gc
 
 import requests
 import sys
@@ -19,8 +20,8 @@ start_time = 0
 
 
 def click_processor(event: Event):
-    x = event.x // 2 - 200
-    y = event.y // 2 - 200
+    x = event.x // 3 - 200
+    y = event.y // 3 - 200
     run_interact(x, y)
 
 
@@ -29,7 +30,7 @@ panel = Label(window)
 panel.bind('<Button-1>', click_processor)
 panel.pack()
 
-global_state = decode_alien('110110001011110110000111101000010011010110000')[0]
+global_state = decode_alien('110110010111110110001011010110011001100110011001101111101101000101010101001101101000110000')[0]
 global_function_thunk_dict = {}
 
 
@@ -83,7 +84,7 @@ def draw(points_list):
     global img_id
     img_id += 1
     max_cell = 400
-    cell_size = 2
+    cell_size = 3
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
@@ -157,7 +158,7 @@ def parse(tokens):
     if tok == "ap":
         lhs, cont1 = parse(rem)
         rhs, cont2 = parse(cont1)
-        return (lambda x: Ap(lhs, rhs),), cont2
+        return Ap(lhs, rhs), cont2
     elif is_int(tok):
         return int(tok), rem
     elif tok[0] == ":" or tok == 'galaxy':
@@ -177,23 +178,20 @@ def run_interact(coord1, coord2):
     function_thunk_dict = global_function_thunk_dict
 
     global global_state
-    state = global_state
-
-    prev_state = ''
-    new_state = encode_alien(extract(state))
-    cur_state = state
+    cur_state = global_state
 
     def run(x):
         return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
 
-    prev_state = new_state
     cur_state = extract(evaluate((run,), function_thunk_dict))
     new_state = encode_alien(cur_state)
-    print('state_enc:', new_state)
-    print('state:', decode_to_alien_string(new_state)[0])
-    print('state dec', decode(new_state)[0])
+    print('new state_enc:', new_state)
 
     global_state = cur_state
+
+    global memorized
+    memorized.clear()
+    gc.collect()
 
 
 def main():
