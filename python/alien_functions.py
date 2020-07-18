@@ -1,10 +1,3 @@
-import os
-import requests
-
-API_KEY = os.environ['API_KEY']
-SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
-
-
 def extract(x):
     if isinstance(x, tuple):
         return extract(x[0](())) # should work without extract
@@ -139,33 +132,3 @@ def div(a_thunk):
         #TODO
         return int(float(extract(a_thunk)) / extract(b_thunk))
     return div1
-
-
-def send(data):
-    params = {
-        "apiKey": API_KEY
-    }
-    response = requests.post(SEND_URL, params=params, data=data)
-    assert(response.status_code == 200)
-    return response.content.decode("utf-8")
-
-
-def f38(protocol_thunk, triple_thunk):
-    flag = car(triple_thunk)
-    newState = car(cdr(triple_thunk))
-    data = cdr(cdr(cdr(triple_thunk)))
-
-    if flag == 0:
-        return newState, data
-    else:
-        return interact(protocol_thunk)(newState)(send(data))
-
-
-def interact(protocol_thunk):
-    def interact1(state_thunk):
-        def interact2(data_thunk):
-            protocol = extract(protocol_thunk)
-            return f38(protocol_thunk, protocol(state_thunk)(data_thunk))
-        return interact2
-
-    return interact1

@@ -1,10 +1,51 @@
+import os
+import requests
 import sys
 from PIL import Image
 
+from decoder import decode
 from alien_functions import *
 from alien_python import *
 
 sys.setrecursionlimit(100000)
+
+API_KEY = os.environ['API_KEY']
+SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
+
+
+def send(data):
+    encoded_data = encode_alien(data)
+    params = {
+        "apiKey": API_KEY
+    }
+    response = requests.post(SEND_URL, params=params, data=encoded_data)
+    assert(response.status_code == 200)
+
+    encoded_response = response.content.decode("utf-8")
+    print(decode(encoded_response)[0])
+    alien = decode_alien(encoded_response)
+    return alien[0]
+
+
+def f38(protocol_thunk, triple_thunk):
+    flag = car(triple_thunk)
+    newState = car(cdr(triple_thunk))
+    data = cdr(cdr(cdr(triple_thunk)))
+
+    if flag == 0:
+        return newState, data
+    else:
+        return interact(protocol_thunk)(newState)(send(data))
+
+
+def interact(protocol_thunk):
+    def interact1(state_thunk):
+        def interact2(data_thunk):
+            protocol = extract(protocol_thunk)
+            return f38(protocol_thunk, protocol(state_thunk)(data_thunk))
+        return interact2
+
+    return interact1
 
 
 def draw(points):
