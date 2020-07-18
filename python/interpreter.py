@@ -3,7 +3,7 @@ import requests
 import sys
 from PIL import Image
 
-from decoder import decode
+from decoder import decode, decode_to_alien_string
 from alien_functions import *
 from alien_python import *
 
@@ -37,7 +37,7 @@ def f38(protocol_thunk, triple_thunk):
 
     if extract(flag) == 0:
         multipledraw(extract(data))
-        return decode(encode_alien(extract(newState)))[0]
+        return extract(newState)
     else:
         n_data = send(data)
         return interact(protocol_thunk)(newState)(n_data)
@@ -138,7 +138,10 @@ def main():
         parsed = parse(split[1].strip().split(" "))
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
-    print(evaluate(function_thunk_dict["inter"], function_thunk_dict))
+
+    newstate = evaluate(function_thunk_dict["inter"], function_thunk_dict)
+    print(decode(encode_alien(newstate))[0])
+    print(decode_to_alien_string(encode_alien(newstate))[0])
 
 
 if __name__ == "__main__":
