@@ -74,7 +74,7 @@ def i(x_thunk):
 def cons(x_thunk):
     def cons1(y_thunk):
         def cons2(foo_thunk):
-            return extract(foo_thunk)(x_thunk)(y_thunk)
+            return extract(extract(foo_thunk)(x_thunk))(y_thunk)
         return cons2
     return cons1
 

@@ -62,34 +62,45 @@ def interact(protocol_thunk):
 
 img_id = 0
 
-def draw(points):
+
+def draw(points_list):
     global img_id
     img_id += 1
     max_cell = 400
-    cell_size = 1
+    cell_size = 2
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
-    while isnil(points)(False)(True):
-        cur_point = extract(car(points))
-        points = extract(cdr(points))
-        x, y = extract(car(cur_point)), extract(cdr(cur_point))
+    intensity = 255
+    while isnil(points_list)(False)(True):
+        points = extract(car(points_list))
+        points_list = extract(cdr(points_list))
 
-        x += 200
-        y += 200
+        while isnil(points)(False)(True):
+            cur_point = extract(car(points))
+            points = extract(cdr(points))
+            x, y = extract(car(cur_point)), extract(cdr(cur_point))
 
-        assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
-        for xi in range(x * cell_size, x * cell_size + cell_size):
-            for yi in range(y * cell_size, y * cell_size + cell_size):
-                pixels[xi, yi] = (255, 255, 255)
-    img.save("{}.png".format(img_id), "PNG")
+            x += 200
+            y += 200
+
+            assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
+            for xi in range(x * cell_size, x * cell_size + cell_size):
+                for yi in range(y * cell_size, y * cell_size + cell_size):
+                    if pixels[xi, yi] == (0, 0, 0):
+                        pixels[xi, yi] = (intensity, intensity, intensity)
+
+        intensity = int(intensity * 0.4)
+    # img.save("{}.png".format(img_id), "PNG")
+    img.show()
 
 
 def multipledraw(images):
-    while isnil(images)(False)(True):
-        cur_image = extract(car(images))
-        images = extract(cdr(images))
-        draw(cur_image)
+    draw(images)
+    # while isnil(images)(False)(True):
+    #     cur_image = extract(car(images))
+    #     images = extract(cdr(images))
+    #     draw(cur_image)
 
 
 def evaluate(term_thunk, function_thunk_dict):
@@ -138,13 +149,13 @@ def parse(tokens):
         return (lambda x: tok,), rem
 
 
-def run_interact(coord1, coord2, state, function_thunk_dict):
-    print('starting from', coord1, coord2)
+def run_interact(state, function_thunk_dict):
     prev_state = ''
     new_state = encode_alien(extract(state))
     cur_state = state
 
     while True:
+        coord1, coord2 = map(int, input().split())
         def run(x):
             return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
 
@@ -171,28 +182,8 @@ def main():
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
 
-    # 8, 4, decode_alien('11011000011111011001000011010110000')[0]
-    # 2, -8, decode_alien('11011000011111011001010011010110000')[0]
-    # 3, 6, decode_alien('11011000011111011001100011010110000')[0]
-    # 0, -14, decode_alien('11011000011111011001110011010110000')[0]
-    # -4, 10, decode_alien('11011000011111011010000011010110000')[0]
-    # 9, -3, decode_alien('11011000011111011010010011010110000')[0]
-    # -4, 10, decode_alien('11011000011111011010100011010110000')[0]
-    run_interact(0, 72, decode_alien('110110001011110110000111101000010011010110000')[0], function_thunk_dict)
-    # for coord1 in range(1, 15):
-    #     run_interact(0, coord1, nil, function_thunk_dict)
-    #     run_interact(0, -coord1, nil, function_thunk_dict)
-    #     run_interact(coord1, 0, nil, function_thunk_dict)
-    #     run_interact(-coord1, 0, nil, function_thunk_dict)
-    #     for coord2 in range(1, 15):
-    #         run_interact(coord1, coord2, nil, function_thunk_dict)
-    #         run_interact(-coord1, coord2, nil, function_thunk_dict)
-    #         run_interact(coord1, -coord2, nil, function_thunk_dict)
-    #         run_interact(-coord1, -coord2, nil, function_thunk_dict)
+    run_interact(decode_alien('110110001011110110000111101000010011010110000')[0], function_thunk_dict)
 
 
 if __name__ == "__main__":
     main()
-
-# 111111101000011010001111110101010001111110110000110100011111101100010101000101111101000101010000111111010000110100001111101010100001111101100011101000011111101000110101111101000010101111011000010101111011000110101111101000110110000111110100110000111110110000101100001111101100010011000011111101000100110001011111010000101100011111101001100011111101100001011000110011111110100111101000111111101010001010001000110000
-# 111111101000011010001111110101010001111110110000110100011111101100010101000101111101000101010000111111010000110100001111101010100001111101100011101000011111101000110101111101000010101111011000010101111011000110101111101000110110000111110100110000111110110000101100001111101100010011000011111101000100110001011111010000101100011111101001100011111101100001011000110011111110100111101000111111101010001010001000110000
