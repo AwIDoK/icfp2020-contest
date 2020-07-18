@@ -13,7 +13,7 @@ def decode_alien(encoded):
         # positive
         pos = remainder.find("0")
         if pos == 0:
-            return "0", remainder[1:]
+            return 0, remainder[1:]
         else:
             number = remainder[pos + 1: pos + 1 + 4 * pos]
             return int(number, 2), remainder[pos + 1 + 4 * pos:]
@@ -21,7 +21,7 @@ def decode_alien(encoded):
         # negative
         pos = remainder.find("0")
         if pos == 0:
-            return "0", remainder[1:]
+            return 0, remainder[1:]
         else:
             number = remainder[pos + 1: pos + 1 + 4 * pos]
             return -int(number, 2), remainder[pos + 1 + 4 * pos:]
