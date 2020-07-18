@@ -1,8 +1,12 @@
+import os
+import requests
 import sys
 from PIL import Image
 
 sys.setrecursionlimit(100000)
 
+API_KEY = os.environ['API_KEY']
+SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
 # 18
 def s(x):
@@ -124,7 +128,11 @@ def div(a):
 
 
 def send(data):
-    return ()
+    params = {
+        "apiKey": API_KEY
+    }
+    response = requests.post(SEND_URL, params=params, data=data).content
+    return response.decode("utf-8")
 
 
 def f38(protocol, triple):
