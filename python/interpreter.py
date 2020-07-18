@@ -1,4 +1,6 @@
 import os
+import time
+
 import requests
 import sys
 from PIL import Image
@@ -11,6 +13,8 @@ sys.setrecursionlimit(100000)
 
 API_KEY = os.environ['API_KEY']
 SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
+
+start_time = 0
 
 
 def send(data):
@@ -27,6 +31,9 @@ def send(data):
     print('received', encoded_response)
     print('decoded to', decode(encoded_response)[0])
     alien = decode_alien(encoded_response)
+
+    print('send time', time.time() - start_time)
+
     return alien[0]
 
 
@@ -120,12 +127,12 @@ def parse(tokens):
         rhs, cont2 = parse(cont1)
         return (lambda x: Ap(lhs, rhs),), cont2
     elif is_int(tok):
-        return (lambda x: int(tok),), rem
+        return int(tok), rem
     elif tok[0] == ":" or tok == 'galaxy':
-        return (lambda x: tok,), rem
+        return tok, rem
     else:
         if tok in globals():
-            return (lambda x: globals()[tok],), rem
+            return globals()[tok], rem
         print("FAIL", tok)
         exit()
         return (lambda x: tok,), rem
@@ -146,6 +153,9 @@ def run_interact(coord1, coord2, state, function_thunk_dict):
 
 
 def main():
+    global start_time
+    start_time = time.time()
+
     file = open('galaxy.txt', 'r')
     function_thunk_dict = {}
     for line in file:
@@ -162,3 +172,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# 111111101000011010001111110101010001111110110000110100011111101100010101000101111101000101010000111111010000110100001111101010100001111101100011101000011111101000110101111101000010101111011000010101111011000110101111101000110110000111110100110000111110110000101100001111101100010011000011111101000100110001011111010000101100011111101001100011111101100001011000110011111110100111101000111111101010001010001000110000
+# 111111101000011010001111110101010001111110110000110100011111101100010101000101111101000101010000111111010000110100001111101010100001111101100011101000011111101000110101111101000010101111011000010101111011000110101111101000110110000111110100110000111110110000101100001111101100010011000011111101000100110001011111010000101100011111101001100011111101100001011000110011111110100111101000111111101010001010001000110000
