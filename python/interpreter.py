@@ -1,9 +1,10 @@
 import os
 import time
+from tkinter import *
 
 import requests
 import sys
-from PIL import Image
+from PIL import Image, ImageTk
 
 from decoder import decode, decode_to_alien_string
 from alien_functions import *
@@ -15,6 +16,21 @@ API_KEY = os.environ['API_KEY']
 SEND_URL = "https://icfpc2020-api.testkontur.ru/aliens/send"
 
 start_time = 0
+
+
+def click_processor(event: Event):
+    x = event.x // 2 - 200
+    y = event.y // 2 - 200
+    run_interact(x, y)
+
+
+window = Tk()
+panel = Label(window)
+panel.bind('<Button-1>', click_processor)
+panel.pack()
+
+global_state = decode_alien('110110001011110110000111101000010011010110000')[0]
+global_function_thunk_dict = {}
 
 
 def send(data):
@@ -92,7 +108,12 @@ def draw(points_list):
 
         intensity = int(intensity * 0.4)
     # img.save("{}.png".format(img_id), "PNG")
-    img.show()
+    # img.show()
+
+    pimg = ImageTk.PhotoImage(img)
+    panel.configure(image=pimg)
+    panel.pack()
+    panel.image_ref = pimg
 
 
 def multipledraw(images):
@@ -149,22 +170,30 @@ def parse(tokens):
         return (lambda x: tok,), rem
 
 
-def run_interact(state, function_thunk_dict):
+def run_interact(coord1, coord2):
+    print('coords', coord1, coord2)
+
+    global global_function_thunk_dict
+    function_thunk_dict = global_function_thunk_dict
+
+    global global_state
+    state = global_state
+
     prev_state = ''
     new_state = encode_alien(extract(state))
     cur_state = state
 
-    while True:
-        coord1, coord2 = map(int, input().split())
-        def run(x):
-            return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
+    def run(x):
+        return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
 
-        prev_state = new_state
-        cur_state = evaluate((run,), function_thunk_dict)
-        new_state = encode_alien(cur_state)
-        print('state_enc:', new_state)
-        print('state:', decode_to_alien_string(new_state)[0])
-        print('state dec', decode(new_state)[0])
+    prev_state = new_state
+    cur_state = extract(evaluate((run,), function_thunk_dict))
+    new_state = encode_alien(cur_state)
+    print('state_enc:', new_state)
+    print('state:', decode_to_alien_string(new_state)[0])
+    print('state dec', decode(new_state)[0])
+
+    global_state = cur_state
 
 
 def main():
@@ -182,7 +211,13 @@ def main():
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
 
-    run_interact(decode_alien('110110001011110110000111101000010011010110000')[0], function_thunk_dict)
+    global global_function_thunk_dict
+    global_function_thunk_dict = function_thunk_dict
+
+    run_interact(0, 0)
+
+    window.title("contest")
+    window.mainloop()
 
 
 if __name__ == "__main__":
