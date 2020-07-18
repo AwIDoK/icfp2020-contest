@@ -31,6 +31,7 @@ def decode_alien(encoded):
 
 
 def encode_alien(decoded) -> str:
+    decoded = extract(decoded)
     if isinstance(decoded, int):
         # int
         if decoded == 0:
