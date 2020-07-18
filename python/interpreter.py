@@ -211,6 +211,10 @@ def parse(tokens):
     if tok == "ap":
         lhs, cont1 = parse(rem)
         rhs, cont2 = parse(cont1)
+
+        if callable(lhs) and (callable(rhs) or isinstance(rhs, int)):
+            return lhs(rhs), cont2
+
         return Ap(lhs, rhs), cont2
     elif is_int(tok):
         return int(tok), rem
