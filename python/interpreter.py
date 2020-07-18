@@ -2,6 +2,7 @@ import os
 import json
 import time
 from tkinter import *
+import tkinter as tk
 import gc
 import pickle
 
@@ -26,17 +27,25 @@ Y = 0
 
 def click_processor(event: Event):
     global X, Y
-    x = event.x // 3 - 150
-    y = event.y // 3 - 150
+    x = event.x // 4 - 150
+    y = event.y // 4 - 150
     X = x
     Y = y
     run_interact(x, y)
 
 
 window = Tk()
-window.geometry("900x900")
+window.geometry("1200x1220")
 window.resizable(0, 0)
 
+statusbar = Label(window, bd=1, relief=tk.SUNKEN, anchor=tk.W)
+statusbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+
+def show_coords(event: tk.Event):
+    x = event.x // 4 - 150
+    y = event.y // 4 - 150
+    statusbar.configure(text='{} {}'.format(x, y))
 
 def save():
     global global_state, X, Y
@@ -69,6 +78,7 @@ window.config(menu=menubar)
 
 panel = Label(window)
 panel.bind('<Button-1>', click_processor)
+panel.bind('<Motion>', show_coords)
 panel.pack()
 
 global_state = decode_alien('110110010111110110001011010110011001100110011001101111101101000101010101001101101000110000')[0]
@@ -127,7 +137,7 @@ def draw(points_list):
     global img_id
     img_id += 1
     max_cell = 300
-    cell_size = 3
+    cell_size = 4
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
