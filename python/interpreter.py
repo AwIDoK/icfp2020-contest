@@ -131,6 +131,20 @@ def parse(tokens):
         return (lambda x: tok,), rem
 
 
+def run_interact(coord1, coord2, state, function_thunk_dict):
+    prev_state = ''
+    new_state = encode_alien(extract(state))
+    cur_state = state
+
+    while prev_state != new_state:
+        def run(x):
+            return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
+
+        prev_state = new_state
+        cur_state = evaluate((run,), function_thunk_dict)
+        new_state = encode_alien(cur_state)
+
+
 def main():
     file = open('galaxy.txt', 'r')
     function_thunk_dict = {}
@@ -143,9 +157,7 @@ def main():
         assert(parsed[1] == [])
         function_thunk_dict[name] = parsed[0]
 
-    newstate = evaluate(function_thunk_dict["inter"], function_thunk_dict)
-    print(decode(encode_alien(newstate))[0])
-    print(decode_to_alien_string(encode_alien(newstate))[0])
+    run_interact(0, 0, nil, function_thunk_dict)
 
 
 if __name__ == "__main__":
