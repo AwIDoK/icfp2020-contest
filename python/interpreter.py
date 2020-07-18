@@ -72,6 +72,8 @@ panel.bind('<Button-1>', click_processor)
 panel.pack()
 
 global_state = decode_alien('110110010111110110001011010110011001100110011001101111101101000101010101001101101000110000')[0]
+prev_state = global_state
+
 global_function_thunk_dict = {}
 
 
@@ -219,7 +221,9 @@ def run_interact(coord1, coord2):
     function_thunk_dict = global_function_thunk_dict
 
     global global_state
+    prev_state = global_state
     cur_state = global_state
+    
 
     def run(x):
         return interact(evaluate(function_thunk_dict['galaxy'], function_thunk_dict))(cur_state)(cons(coord1)(coord2))
