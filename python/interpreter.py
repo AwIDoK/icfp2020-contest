@@ -131,8 +131,9 @@ def send(data):
     params = {
         "apiKey": API_KEY
     }
-    response = requests.post(SEND_URL, params=params, data=data).content
-    return response.decode("utf-8")
+    response = requests.post(SEND_URL, params=params, data=data)
+    assert(response.status_code == 200)
+    return response.content.decode("utf-8")
 
 
 def f38(protocol, triple):
