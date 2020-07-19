@@ -38,7 +38,7 @@ AlienData makeJoinRequest(int64_t playerKey) {
 
 AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
 	auto requestTypeData = 3;
-	auto shipParams = std::vector<AlienData>({32, 32, 10, 2});
+	auto shipParams = std::vector<AlienData>({64, 64, 10, 1});
 	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
 }
 
@@ -156,8 +156,8 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
             commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first))); // gravity + gravity turned 90 degrees
         } else {
             // try to shoot
-            int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.params.generation + ship.energy_limit - ship.current_energy));
-            if (attack_power > 0) {
+            int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
+            if (attack_power > 48) {
                 commands.push_back(makeShootCommand(shipid, predictNextPosition(enemyShip), attack_power));
             }
         }
