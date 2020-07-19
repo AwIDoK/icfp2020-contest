@@ -53,10 +53,8 @@ AlienData makeShootCommand(int64_t id, AlienData const& position, int64_t power)
     return std::vector<AlienData>({2, id, position, power});
 }
 
-AlienData makeCommandsRequest(int64_t playerKey, const AlienData& gameResponse) {
-	auto requestTypeData = 4;
-	auto command = makeMoveCommand(0, VectorPair<AlienData>(-1, -1)); //todo ship id
-	auto commandList = std::vector<AlienData>({command});
+AlienData makeCommandsRequest(int64_t playerKey, const std::vector<AlienData>& commandList) {
+    auto requestTypeData = 4;
     return std::vector<AlienData>({requestTypeData, playerKey, commandList});
 }
 
@@ -98,6 +96,47 @@ std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<i
     return {newPos, newSpeed};
 }
 
+std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
+    std::vector<std::pair<int, int>> result(100);
+
+    for (int i = 0; i < 50; i++) {
+        auto tmp = predict_movement(position, speed, {0, 0});
+        position = tmp.first;
+        speed = tmp.second;
+        result[i] = position;
+    }
+
+    return result;
+}
+
+std::vector<AlienData> runStrategy(const AlienData& gameInfo) {
+    std::vector<AlienData> commands;
+    std::vector<AlienData> myShips; //todo
+
+    for (auto ship : myShips) {
+        int shipid{}; // todo
+        int planetSize{}; //todo;
+        std::pair<int, int> pos{}; //todo
+        std::pair<int, int> speed{}; //todo
+
+        bool safeOrbit = true;
+        auto currentOrbit = calculateOrbit(pos, speed);
+        for (auto p: currentOrbit) {
+            if (std::abs(p.first) <= planetSize && std::abs(p.second) <= planetSize) {
+                safeOrbit = false;
+                break;
+            }
+        }
+
+        if (!safeOrbit) {
+            auto gravity = get_gravity(pos);
+            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first)));
+        }
+    }
+
+    return commands;
+}
+
 int main(int argc, char* argv[]) {
 	const std::string serverUrl(argv[1]);
 	const int64_t playerKey(std::stoll(argv[2]));
@@ -122,7 +161,8 @@ int main(int argc, char* argv[]) {
 
     while (gameResponse.getVector()[1].getNumber() != 2) {
     	std::cout << gameResponse.to_string() << std::endl;
-        auto commandsRequest = makeCommandsRequest(playerKey, gameResponse);
+    	auto commands = runStrategy(gameResponse);
+        auto commandsRequest = makeCommandsRequest(playerKey, commands);
         gameResponse = send(client, serverUrl, commandsRequest);
 	}
     
