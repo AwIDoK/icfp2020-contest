@@ -44,7 +44,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
 
     for (const auto move: moves) {
         auto nMe = predictShipState(me, move);
-        auto nEnemy = predictShipState(enemy, {0, 0});
+        auto nEnemy = samePositionCount >= 2 ? enemy : predictShipState(enemy, {0, 0});
 
         if (getDistance2(nMe, nEnemy) < bestDistance) {
             bestDistance = getDistance2(nMe, nEnemy);
@@ -56,7 +56,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
 
         for (int i = 0; i < myTrajectory.size(); i++) {
             auto myPos = myTrajectory[i];
-            auto enemyPos = enemyTrajectory[i];
+            auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[i];
 
             if (isBadPosition(myPos, gameInfo)) {
                 break;
