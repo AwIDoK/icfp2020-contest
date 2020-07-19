@@ -8,6 +8,7 @@
 
 AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
 	auto encoded = encodeAlien(data);
+	std::cout << "sending " << data.to_string() << ' ' << encoded << std::endl;
 	const std::shared_ptr<httplib::Response> serverResponse = 
 		client.Post((serverUrl + "/aliens/send").c_str(), encoded.c_str(), "text/plain");
 
