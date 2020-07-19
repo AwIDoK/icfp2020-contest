@@ -5,6 +5,7 @@ from tkinter import *
 import tkinter as tk
 import gc
 import pickle
+from pprint import pprint
 
 import requests
 import sys
@@ -94,7 +95,9 @@ def send(data):
 
 def send_encoded(encoded_data):
     # print("encoded", encoded_data)
-    print('sending', try_describe(decode_to_python(encoded_data)[0]))
+    print('sending:')
+    pprint(try_describe_request(decode_to_python(encoded_data)[0]))
+    print()
 
     params = {
         "apiKey": API_KEY
@@ -104,7 +107,9 @@ def send_encoded(encoded_data):
 
     encoded_response = response.content.decode("utf-8")
     # print('received', encoded_response)
-    print('received', decode_to_python(encoded_response)[0])
+    print('received:')
+    pprint(try_describe_response(decode_to_python(encoded_response)[0]))
+    print()
 
     # print('send time', time.time() - start_time)
 
