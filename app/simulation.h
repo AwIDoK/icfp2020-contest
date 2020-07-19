@@ -111,3 +111,7 @@ bool isInsideWorld(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
 bool isBadPosition(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
     return isInsidePlanet(pos, gameInfo) || !isInsideWorld(pos, gameInfo);
 }
+
+bool isBadPosition(ShipInfo const& ship, StaticGameInfo const& gameInfo) {
+    return isInsidePlanet({ship.x, ship.y}, gameInfo) || !isInsideWorld({ship.x, ship.y}, gameInfo);
+}
