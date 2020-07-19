@@ -41,9 +41,21 @@ AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
 	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
 }
 
+AlienData makeMoveCommand(int64_t id, AlienData const& move) {
+    return std::vector<AlienData>({0, id, move});
+}
+
+AlienData makeDestructCommand(int64_t id) {
+    return std::vector<AlienData>({1, id});
+}
+
+AlienData makeShootCommand(int64_t id, AlienData const& position, int64_t power) {
+    return std::vector<AlienData>({2, id, position, power});
+}
+
 AlienData makeCommandsRequest(int64_t playerKey, const AlienData& gameResponse) {
 	auto requestTypeData = 4;
-	auto command = std::vector<AlienData>({0, 0, VectorPair<AlienData>(-1, -1)});
+	auto command = makeMoveCommand(0, VectorPair<AlienData>(-1, -1)); //todo ship id
 	auto commandList = std::vector<AlienData>({command});
     return std::vector<AlienData>({requestTypeData, playerKey, commandList});
 }
