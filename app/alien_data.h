@@ -72,4 +72,25 @@ public:
     bool isPair() const {
         return std::holds_alternative<VectorPair<AlienData>>(data);
     }
+
+
+    std::string to_string() const {
+        if (isNumber()) {
+            return std::to_string(getNumber());
+        } else if (isVector()) {
+            std::string result = "[";
+            bool first = true;
+            for (const auto& element : getVector()) {
+                if (!first) {
+                    result += ", ";
+                }
+                first = false;
+                result += element.to_string();
+            }
+            result += ']';
+            return result;
+        } else {
+            return "(" + getPair().first().to_string() + ", " + getPair().second().to_string() + ")";
+        }
+    }
 };

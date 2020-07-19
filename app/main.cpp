@@ -27,10 +27,29 @@ AlienData send(httplib::Client& client, const std::string& serverUrl, const Alie
 }
 
 
+AlienData makeJoinRequest(int64_t playerKey) {
+	auto requestTypeData = 2;
+	auto unknownVec = std::vector<AlienData>();
+	return std::vector<AlienData>({requestTypeData, playerKey, unknownVec});
+}
+
+
+AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
+	auto requestTypeData = 3;
+	auto shipParams = std::vector<AlienData>({2, 3, 4, 5});
+	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
+}
+
+AlienData makeCommandsRequest(int64_t playerKey, const AlienData& gameResponse) {
+	auto requestTypeData = 4;
+	auto command = std::vector<AlienData>({0, 0, VectorPair<AlienData>(-1, -1)});
+    return std::vector<AlienData>({requestTypeData, playerKey, command});
+}
+
 
 int main(int argc, char* argv[]) {
 	const std::string serverUrl(argv[1]);
-	const std::string playerKey(argv[2]);
+	const int64_t playerKey(std::stoll(argv[2]));
 
 	std::cout << "ServerUrl: " << serverUrl << "; PlayerKey: " << playerKey << std::endl;
 	
@@ -43,6 +62,20 @@ int main(int argc, char* argv[]) {
 	const std::string serverName = urlMatches[1];
 	const int serverPort = std::stoi(urlMatches[2]);
 	httplib::Client client(serverName, serverPort);
+
+	auto joinRequest = makeJoinRequest(playerKey);
+    auto gameResponse = send(client, serverUrl, joinRequest);
+    std::cout << gameResponse.to_string() << std::endl;
+    auto startRequest = makeStartRequest(playerKey, gameResponse);
+    gameResponse = send(client, serverUrl, startRequest);
+
+    while (gameResponse.getVector()[1].getNumber() != 2) {
+    	std::cout << gameResponse.to_string() << std::endl;
+        auto commandsRequest = makeCommandsRequest(playerKey, gameResponse);
+        gameResponse = send(client, serverUrl, commandsRequest);
+	}
+    
+    std::cout << gameResponse.to_string() << std::endl;
 	
 	return 0;
 }
