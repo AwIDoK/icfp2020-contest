@@ -12,7 +12,8 @@ struct GameResponse {
     uint32_t gameStatus;
     StaticGameInfo gameInfo;
     GameState gameState;
-    GameResponse(const AlienData& data) {
+
+    explicit GameResponse(const AlienData& data) {
         auto vector = data.getVector();
         if (vector.size() == 1) {
             std::cout << "Bad request";
