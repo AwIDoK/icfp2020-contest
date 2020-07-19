@@ -1,8 +1,18 @@
 #pragma once
 
 #include <cstdint>
+#include "ship_info.h"
 
 struct GameState {
     uint32_t gameTick;
-    bool role; // 0 - attacker, 1 - defende;
+
+    std::vector<ShipInfo> ships;
+
+    GameState(const AlienData& data) {
+        auto vector = data.getVector();
+        gameTick = vector[0].getNumber();
+        for (auto const& ship : vector[2].getVector()) {
+            ships.emplace_back(ship);
+        }
+    }
 };

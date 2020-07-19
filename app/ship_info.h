@@ -1,8 +1,13 @@
 #pragma once
 
+#include "alien_data.h"
 #include <cstdint>
 
 struct ShipInfo {
-    uint32_t gameTick;
-    bool role; // 0 - attacker, 1 - defende;
+    int32_t x, y;
+    int32_t speed_x, speed_y;
+
+    ShipInfo(const AlienData& data) {
+        
+    }
 };
