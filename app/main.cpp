@@ -98,9 +98,10 @@ std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<i
 }
 
 std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
-    std::vector<std::pair<int, int>> result(100);
+    constexpr int LOOKAHEAD = 50;
+    std::vector<std::pair<int, int>> result(LOOKAHEAD);
 
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < LOOKAHEAD; i++) {
         auto tmp = predict_movement(position, speed, {0, 0});
         position = tmp.first;
         speed = tmp.second;
