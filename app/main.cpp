@@ -4,6 +4,7 @@
 #include "httplib.h"
 #include "alien_data.h"
 #include "translator.h"
+#include "game_response.h"
 
 
 AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
@@ -37,7 +38,7 @@ AlienData makeJoinRequest(int64_t playerKey) {
 
 AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
 	auto requestTypeData = 3;
-	auto shipParams = std::vector<AlienData>({2, 3, 4, 5});
+	auto shipParams = std::vector<AlienData>({32, 32, 10, 2});
 	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
 }
 
@@ -109,15 +110,20 @@ std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, st
     return result;
 }
 
-std::vector<AlienData> runStrategy(const AlienData& gameInfo) {
+std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
-    std::vector<AlienData> myShips; //todo
+    int planetSize = gameResponse.gameInfo.planetSize;
+    bool role = gameResponse.gameInfo.role;
 
-    for (auto ship : myShips) {
-        int shipid{}; // todo
-        int planetSize{}; //todo;
-        std::pair<int, int> pos{}; //todo
-        std::pair<int, int> speed{}; //todo
+    for (auto const& ship : gameResponse.gameState.ships) {
+        if (ship.role != role) {
+            // skipping ship
+            continue;
+        }
+
+        int shipid = ship.id;
+        std::pair<int, int> pos{ship.x, ship.y};
+        std::pair<int, int> speed{ship.speed_x, ship.speed_y};
 
         bool safeOrbit = true;
         auto currentOrbit = calculateOrbit(pos, speed);
@@ -130,7 +136,7 @@ std::vector<AlienData> runStrategy(const AlienData& gameInfo) {
 
         if (!safeOrbit) {
             auto gravity = get_gravity(pos);
-            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first)));
+            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first))); // gravity + gravity turned 90 degrees
         }
     }
 
@@ -154,19 +160,20 @@ int main(int argc, char* argv[]) {
 	httplib::Client client(serverName, serverPort);
 
 	auto joinRequest = makeJoinRequest(playerKey);
-    auto gameResponse = send(client, serverUrl, joinRequest);
-    std::cout << gameResponse.to_string() << std::endl;
-    auto startRequest = makeStartRequest(playerKey, gameResponse);
-    gameResponse = send(client, serverUrl, startRequest);
+    auto response = send(client, serverUrl, joinRequest);
+    std::cout << response.to_string() << std::endl;
+    auto startRequest = makeStartRequest(playerKey, response);
+    response = send(client, serverUrl, startRequest);
 
-    while (gameResponse.getVector()[1].getNumber() != 2) {
-    	std::cout << gameResponse.to_string() << std::endl;
+    while (response.getVector()[1].getNumber() != 2) {
+    	std::cout << response.to_string() << std::endl;
+    	GameResponse gameResponse{response};
     	auto commands = runStrategy(gameResponse);
         auto commandsRequest = makeCommandsRequest(playerKey, commands);
-        gameResponse = send(client, serverUrl, commandsRequest);
+        response = send(client, serverUrl, commandsRequest);
 	}
     
-    std::cout << gameResponse.to_string() << std::endl;
+    std::cout << response.to_string() << std::endl;
 	
 	return 0;
 }
