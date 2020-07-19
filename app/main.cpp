@@ -46,6 +46,36 @@ AlienData makeCommandsRequest(int64_t playerKey, const AlienData& gameResponse) 
     return std::vector<AlienData>({requestTypeData, playerKey, command});
 }
 
+int signum(int x) {
+    if (x == 0) {
+        return 0;
+    }
+    return x > 0 ? 1 : -1;
+}
+
+// what position and speed we will get if now we have position and speed and send move command
+std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<int, int> position, std::pair<int, int> speed, std::pair<int, int> moveCommand) {
+    int x = position.first;
+    int y = position.second;
+
+    int gx = 0;
+    int gy = 0;
+
+    // separate ifs because if x == y gravity works in both directions
+    // same for x == -y
+    if (std::abs(x) >= std::abs(y)) {
+        gx = -signum(x);
+    }
+
+    if (std::abs(x) <= std::abs(y)) {
+        gy = -signum(y);
+    }
+
+    std::pair newSpeed{speed.first + gx - moveCommand.first, speed.second + gy - moveCommand.second};
+    std::pair newPos{x + newSpeed.first, y + newSpeed.second};
+
+    return {newPos, newSpeed};
+}
 
 int main(int argc, char* argv[]) {
 	const std::string serverUrl(argv[1]);
