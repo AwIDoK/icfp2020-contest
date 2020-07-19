@@ -53,8 +53,7 @@ int signum(int x) {
     return x > 0 ? 1 : -1;
 }
 
-// what position and speed we will get if now we have position and speed and send move command
-std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<int, int> position, std::pair<int, int> speed, std::pair<int, int> moveCommand) {
+std::pair<int, int> get_gravity(std::pair<int, int> position) {
     int x = position.first;
     int y = position.second;
 
@@ -71,8 +70,16 @@ std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<i
         gy = -signum(y);
     }
 
-    std::pair newSpeed{speed.first + gx - moveCommand.first, speed.second + gy - moveCommand.second};
-    std::pair newPos{x + newSpeed.first, y + newSpeed.second};
+    return {gx, gy};
+}
+
+// what position and speed we will get if now we have position and speed and send move command
+std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<int, int> position, std::pair<int, int> speed, std::pair<int, int> moveCommand) {
+    auto gravity = get_gravity(position);
+
+    std::pair newSpeed{speed.first + gravity.first - moveCommand.first,
+                       speed.second + gravity.second - moveCommand.second};
+    std::pair newPos{position.first + newSpeed.first, position.second + newSpeed.second};
 
     return {newPos, newSpeed};
 }
