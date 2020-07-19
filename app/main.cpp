@@ -97,6 +97,11 @@ std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<i
     return {newPos, newSpeed};
 }
 
+AlienData predictNextPosition(ShipInfo const& info) {
+    auto tmp = predict_movement({info.x, info.y}, {info.speed_x, info.speed_y}, {0, 0});
+    return VectorPair<AlienData>(tmp.first.first, tmp.first.second);
+}
+
 std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
     constexpr int LOOKAHEAD = 50;
     std::vector<std::pair<int, int>> result(LOOKAHEAD);
@@ -111,10 +116,21 @@ std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, st
     return result;
 }
 
+ShipInfo getEnemyShip(bool role, GameResponse const& gameResponse) {
+    for (auto const& ship : gameResponse.gameState.ships) {
+        if (ship.role != role && ship.params.divisionFactor > 0) {
+            return ship;
+        }
+    }
+    return gameResponse.gameState.ships[0]; // should never happen
+}
+
 std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
     int planetSize = gameResponse.gameInfo.planetSize;
     bool role = gameResponse.gameInfo.role;
+
+    ShipInfo enemyShip = getEnemyShip(role, gameResponse);
 
     for (auto const& ship : gameResponse.gameState.ships) {
         if (ship.role != role) {
@@ -138,6 +154,12 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         if (!safeOrbit) {
             auto gravity = get_gravity(pos);
             commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first))); // gravity + gravity turned 90 degrees
+        } else {
+            // try to shoot
+            int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.params.generation + ship.energy_limit - ship.current_energy));
+            if (attack_power > 0) {
+                commands.push_back(makeShootCommand(shipid, predictNextPosition(enemyShip), attack_power));
+            }
         }
     }
 
