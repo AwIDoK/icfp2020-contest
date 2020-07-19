@@ -97,9 +97,8 @@ std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<i
     return {newPos, newSpeed};
 }
 
-AlienData predictNextPosition(ShipInfo const& info) {
-    auto tmp = predict_movement({info.x, info.y}, {info.speed_x, info.speed_y}, {0, 0});
-    return VectorPair<AlienData>(tmp.first.first, tmp.first.second);
+std::pair<int, int> predictNextPosition(ShipInfo const& info) {
+    return predict_movement({info.x, info.y}, {info.speed_x, info.speed_y}, {0, 0}).first;
 }
 
 std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
@@ -125,12 +124,17 @@ ShipInfo getEnemyShip(bool role, GameResponse const& gameResponse) {
     return gameResponse.gameState.ships[0]; // should never happen
 }
 
+bool isClose(std::pair<int, int> a, std::pair<int, int> b, int maxD) {
+    return std::abs(a.first - b.first) <= maxD && std::abs(a.second - b.second) <= maxD;
+}
+
 std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
     int planetSize = gameResponse.gameInfo.planetSize;
     bool role = gameResponse.gameInfo.role;
 
     ShipInfo enemyShip = getEnemyShip(role, gameResponse);
+    auto enemyPrediction = predictNextPosition(enemyShip);
 
     for (auto const& ship : gameResponse.gameState.ships) {
         if (ship.role != role) {
@@ -153,13 +157,26 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
 
         if (!safeOrbit) {
             auto gravity = get_gravity(pos);
-            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(gravity.first + gravity.second, gravity.second - gravity.first))); // gravity + gravity turned 90 degrees
-        } else {
-            // try to shoot
-            int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
-            if (attack_power > 48) {
-                commands.push_back(makeShootCommand(shipid, predictNextPosition(enemyShip), attack_power));
+            std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
+            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(move.first, move.second))); // gravity + gravity turned 90 degrees
+            auto nextPos = predict_movement(pos, speed, move).first;
+            if (!role && isClose(nextPos, enemyPrediction, 1)) {
+                commands.push_back(makeDestructCommand(shipid));
             }
+            continue;
+        }
+
+        auto nextPos = predict_movement(pos, speed, {0, 0}).first;
+        if (!role && isClose(nextPos, enemyPrediction, 1)) {
+            commands.push_back(makeDestructCommand(shipid));
+            continue;
+        }
+
+        // try to shoot
+        int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
+        if (attack_power > 60) {
+            commands.push_back(makeShootCommand(shipid, VectorPair<AlienData>(enemyPrediction.first, enemyPrediction.second), attack_power));
+            continue;
         }
     }
 
