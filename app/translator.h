@@ -66,6 +66,7 @@ AlienData decodeAlien(const std::string& data) {
     size_t cont = 0;
     auto decoded = decodeAlien(data, 0, cont);
     if (cont != data.size()) {
+        std::cout << "failed decoding " << data << std::endl;
         std::cout << cont << ' ' << data.size() << std::endl;
     }
     assert(cont == data.size());
