@@ -5,7 +5,7 @@
 #include <cstdint>
 
 struct ShipInfo {
-    bool role; // 0 - attacker, 1 - defender
+    bool isDefender; // 0 - attacker, 1 - defender
     int32_t id;
     int32_t x, y;
     int32_t speed_x, speed_y;
@@ -19,7 +19,7 @@ struct ShipInfo {
 
         const auto& ship = vector[0].getVector();
 
-        role = ship[0].getNumber();
+        isDefender = ship[0].getNumber();
         id = ship[1].getNumber();
 
         x = ship[2].getPair().first().getNumber();

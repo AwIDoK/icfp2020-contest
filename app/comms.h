@@ -7,6 +7,10 @@
 #include "translator.h"
 #include "game_response.h"
 
+AlienData convertToAlien(std::pair<int, int> p) {
+    return VectorPair<AlienData>(p.first, p.second);
+}
+
 AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
     auto encoded = encodeAlien(data);
     std::cout << "sending " << data.to_string() << ' ' << encoded << std::endl;
@@ -51,12 +55,20 @@ AlienData makeMoveCommand(int64_t id, AlienData const& move) {
     return std::vector<AlienData>({0, id, move});
 }
 
+AlienData makeMoveCommand(int64_t id, std::pair<int, int> move) {
+    return std::vector<AlienData>({0, id, convertToAlien(move)});
+}
+
 AlienData makeDestructCommand(int64_t id) {
     return std::vector<AlienData>({1, id});
 }
 
 AlienData makeShootCommand(int64_t id, AlienData const& position, int64_t power) {
     return std::vector<AlienData>({2, id, position, power});
+}
+
+AlienData makeShootCommand(int64_t id, std::pair<int, int> position, int64_t power) {
+    return std::vector<AlienData>({2, id, convertToAlien(position), power});
 }
 
 AlienData makeCommandsRequest(int64_t playerKey, const std::vector<AlienData>& commandList) {

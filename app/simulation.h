@@ -3,12 +3,25 @@
 #include <utility>
 #include <cmath>
 #include "ship_info.h"
+#include "static_game_info.h"
 
 int signum(int x) {
     if (x == 0) {
         return 0;
     }
     return x > 0 ? 1 : -1;
+}
+
+int64_t sqr(int32_t x) {
+    return static_cast<int64_t>(x) * x;
+}
+
+int64_t getDistance2(std::pair<int, int> a, std::pair<int, int> b) {
+    return sqr(a.first - b.first) + sqr(a.second - b.second);
+}
+
+int64_t getDistance2(ShipInfo const& a, ShipInfo const& b) {
+    return getDistance2({a.x, a.y}, {b.x, b.y});
 }
 
 std::pair<int, int> get_gravity(std::pair<int, int> position) {
@@ -50,7 +63,7 @@ std::pair<int, int> predictNextPosition(ShipInfo const& info) {
     return predictNextPosition(info, {0, 0});
 }
 
-std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
+std::vector<std::pair<int, int>> calculateTrajectory(std::pair<int, int> position, std::pair<int, int> speed) {
     constexpr int LOOKAHEAD = 100;
     std::vector<std::pair<int, int>> result(LOOKAHEAD);
 
@@ -62,4 +75,39 @@ std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, st
     }
 
     return result;
+}
+
+std::vector<std::pair<int, int>> calculateTrajectory(ShipInfo const& ship) {
+    return calculateTrajectory({ship.x, ship.y}, {ship.speed_x, ship.speed_y});
+}
+
+// todo: heat predictions
+ShipInfo predictShipState(ShipInfo ship, std::pair<int, int> move) {
+    if (ship.params.power == 0) {
+        return ship;
+    }
+
+    auto movement = predict_movement({ship.x, ship.y}, {ship.speed_x, ship.speed_y}, move);
+
+    ship.x = movement.first.first;
+    ship.y = movement.first.second;
+
+    ship.speed_x = movement.second.first;
+    ship.speed_y = movement.second.second;
+
+    ship.params.power--;
+
+    return ship;
+}
+
+bool isInsidePlanet(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
+    return std::abs(pos.first) <= gameInfo.planetSize && std::abs(pos.second) <= gameInfo.planetSize;
+}
+
+bool isInsideWorld(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
+    return std::abs(pos.first) < gameInfo.worldSize && std::abs(pos.second) < gameInfo.worldSize;
+}
+
+bool isBadPosition(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
+    return isInsidePlanet(pos, gameInfo) || !isInsideWorld(pos, gameInfo);
 }
