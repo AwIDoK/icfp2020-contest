@@ -293,18 +293,30 @@ def main():
 
     window.title("contest")
 
+    checked = set()
     for x1 in range(8):
         for y1 in range(8):
+            run_interact(2 + 6 * x1, 2 + 6 * y1)
+            global global_state
+            global initial_state
+
+            temp_state = encode_alien(global_state)
+
             for x2 in range(8):
                 for y2 in range(8):
+                    if (x1, y1, x2, y2) in checked or (x2, y2, x1, y1) in checked:
+                        continue
+
                     if x1 != x2 or y1 != y2:
-                        run_interact(2 + 6 * x1, 2 + 6 * y1)
                         run_interact(2 + 6 * x2, 2 + 6 * y2)
-                        global global_state
-                        global initial_state
+                        checked.add((x1, y1, x2, y2))
+
                         if encode_alien(global_state) != initial_state:
                             print('found', x1, y1, x2, y2)
-                            global_state = decode_alien(initial_state)[0]
+
+                        global_state = decode_alien(temp_state)[0]
+
+            global_state = decode_alien(initial_state)[0]
 
 
 
