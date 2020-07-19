@@ -55,7 +55,7 @@ AlienData decodeAlien(const std::string& encoded, size_t currentPosition, size_t
             returnPosition = reminder + 1;
             return 0;
         }
-        auto end = pos + 1 + 4 * (pos);
+        auto end = pos + 1 + 4 * pos;
         returnPosition = reminder + end;
         auto sign = encoded[currentPosition] == '1' ? -1 : 1;
         return sign * fromBinary(encoded, reminder + pos + 1, reminder + end);
@@ -65,6 +65,9 @@ AlienData decodeAlien(const std::string& encoded, size_t currentPosition, size_t
 AlienData decodeAlien(const std::string& data) {
     size_t cont = 0;
     auto decoded = decodeAlien(data, 0, cont);
+    if (cont != data.size()) {
+        std::cout << cont << ' ' << data.size() << std::endl;
+    }
     assert(cont == data.size());
     return decoded;
 }
