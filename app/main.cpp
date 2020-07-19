@@ -44,7 +44,8 @@ AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
 AlienData makeCommandsRequest(int64_t playerKey, const AlienData& gameResponse) {
 	auto requestTypeData = 4;
 	auto command = std::vector<AlienData>({0, 0, VectorPair<AlienData>(-1, -1)});
-    return std::vector<AlienData>({requestTypeData, playerKey, command});
+	auto commandList = std::vector<AlienData>({command});
+    return std::vector<AlienData>({requestTypeData, playerKey, commandList});
 }
 
 int signum(int x) {
