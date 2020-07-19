@@ -9,7 +9,7 @@
 AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
 	auto encoded = encodeAlien(data);
 	const std::shared_ptr<httplib::Response> serverResponse = 
-		client.Post("aliend/send", encoded.c_str(), "text/plain");
+		client.Post("aliens/send", encoded.c_str(), "text/plain");
 
 	if (!serverResponse) {
 		std::cout << "Unexpected server response:\nNo response from server" << std::endl;
