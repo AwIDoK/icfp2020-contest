@@ -8,7 +8,7 @@
 
 int64_t fromBinary(const std::string& string, size_t start, size_t end) {
     int64_t result = 0;
-    for (size_t i = 0; i < end; i++) {
+    for (size_t i = start; i < end; i++) {
         result = result * 2 + (string[i] == '1' ? 1 : 0);
     }
     return result;
