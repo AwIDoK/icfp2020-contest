@@ -21,7 +21,7 @@ std::string toBinary(int64_t num) {
     }
     while (num) {
         result += num & 1 ? '1' : '0';
-        num <<= 1;
+        num >>= 1;
     }
     std::reverse(result.begin(), result.end());
     return result;
@@ -77,10 +77,10 @@ std::string encodeInt(int64_t number) {
     if (number == 0) {
         return "010";
     }
-    std::string prefix = number > 0 ? "01" : "10";
-    auto numberStr = toBinary(abs(number));
+    std::string prefix = (number > 0) ? "01" : "10";
+    auto numberStr = toBinary(std::abs(number));
     auto notPaddingSize = numberStr.size() % 4;
-    auto paddingSize = notPaddingSize == 0 ? 0 : 4 - notPaddingSize;
+    auto paddingSize = (notPaddingSize == 0) ? 0 : 4 - notPaddingSize;
     auto paddedNumberStr = std::string(paddingSize, '0') + numberStr;
     auto length = paddedNumberStr.size() / 4;
     return prefix + std::string(length, '1') + '0' + paddedNumberStr;
