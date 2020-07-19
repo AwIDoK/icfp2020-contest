@@ -31,8 +31,8 @@ start_from_tutorial = None  # int or None
 
 def click_processor(event: Event):
     global X, Y
-    x = event.x // 4 - 150
-    y = event.y // 4 - 150
+    x = event.x // 3 - 200
+    y = event.y // 3 - 200
     X = x
     Y = y
     run_interact(x, y)
@@ -47,8 +47,8 @@ statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
 
 def show_coords(event: tk.Event):
-    x = event.x // 4 - 150
-    y = event.y // 4 - 150
+    x = event.x // 3 - 200
+    y = event.y // 3 - 200
     statusbar.configure(text='{} {}'.format(x, y))
 
 def save():
@@ -85,7 +85,8 @@ panel.bind('<Button-1>', click_processor)
 panel.bind('<Motion>', show_coords)
 panel.pack()
 
-global_state = decode_alien('110110010111110110001011010110011001100110011001101111101101000101010101001101101000110000')[0]
+initial_state = '110110010011110110000111110111001111010110111011001011110111100001100110101101110101001001101111000011011110011011110000111100100110111011001010110111001001101110111011111011110111000111000110111100001110010001101111000011011001111011100001110011011110000101001001110111100001000000011101111000010000100111011110000111110101110111000010010110111010111110110111100001101001111101111000011000000011011110000110110010110111100001000010101101110010001011101110001000101101111000011011010111011101100101111011101001100011011101010000011011110000110101001110111011110101110111100001101011001101110011000111101110011010111101110110000001101111000010111010011011110000101011010110111100001010110001101110101010011101111000011101111011011110000110001001110111100001111101101101110110010011101111000011111000111011110000100111001110111000100000110111100001000110011101111000011111111011011110000110110100110111000010110110111011101101110111001010000110111100001010001011101111000011001010111011101011100011011110000101100110110111000111001110111100001000101001101111000010110011111011101011110111011110000100011100110111100001000101011101110110001101101110111101000011101000011101011000011010110000'
+global_state = decode_alien(initial_state)[0]
 prev_state = global_state
 
 global_function_thunk_dict = {}
@@ -154,8 +155,8 @@ img_id = 0
 def draw(points_list):
     global img_id
     img_id += 1
-    max_cell = 300
-    cell_size = 4
+    max_cell = 400
+    cell_size = 3
     side = max_cell * cell_size
     img = Image.new('RGB', (side, side))
     pixels = img.load()
@@ -169,8 +170,8 @@ def draw(points_list):
             points = extract(cdr(points))
             x, y = extract(car(cur_point)), extract(cdr(cur_point))
 
-            x += 150
-            y += 150
+            x += 200
+            y += 200
 
             assert (x >= 0 and y >= 0 and x < max_cell and y < max_cell)
             for xi in range(x * cell_size, x * cell_size + cell_size):
@@ -288,10 +289,23 @@ def main():
         assert(parsed[1] == [])
         global_function_thunk_dict[name] = parsed[0]
 
-    run_interact(0, 0)
+    #run_interact(-10, -10)
 
     window.title("contest")
-    window.mainloop()
+
+    for x1 in range(8):
+        for y1 in range(8):
+            for x2 in range(8):
+                for y2 in range(8):
+                    if x1 != x2 or y1 != y2:
+                        run_interact(2 + 6 * x1, 2 + 6 * y1)
+                        run_interact(2 + 6 * x2, 2 + 6 * y2)
+                        global global_state
+                        global initial_state
+                        if encode_alien(global_state) != initial_state:
+                            print('found', x1, y1, x2, y2)
+                            global_state = decode_alien(initial_state)[0]
+
 
 
 if __name__ == "__main__":
