@@ -42,9 +42,9 @@ AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
 	auto requestTypeData = 3;
 	std::vector<AlienData> shipParams;
 	if (StaticGameInfo(gameResponse.getVector()[2]).role) {
-        shipParams = std::vector<AlienData>({128, 64, 10, 1});
+        shipParams = std::vector<AlienData>({70, 64, 10, 1});
 	} else {
-        shipParams = std::vector<AlienData>({64, 64, 10, 1});
+        shipParams = std::vector<AlienData>({134, 64, 10, 1});
     }
 	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
 }
