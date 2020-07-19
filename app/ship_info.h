@@ -21,13 +21,13 @@ struct ShipInfo {
         x = ship[2].getPair().first().getNumber();
         y = ship[2].getPair().second().getNumber();
 
-        speed_x = ship[2].getPair().first().getNumber();
-        speed_y = ship[2].getPair().second().getNumber();
+        speed_x = ship[3].getPair().first().getNumber();
+        speed_y = ship[3].getPair().second().getNumber();
 
-        params = ShipParams(ship[3]);
-        current_energy = ship[4].getNumber();
-        energy_limit = ship[5].getNumber();
-        unknown = ship[6].getNumber();
+        params = ShipParams(ship[4]);
+        current_energy = ship[5].getNumber();
+        energy_limit = ship[6].getNumber();
+        unknown = ship[7].getNumber();
         const auto& commands = data.getVector()[1].getVector();
     }
 };
