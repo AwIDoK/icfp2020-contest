@@ -104,7 +104,7 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
             bool safeOrbit = true;
             auto currentOrbit = calculateTrajectory(pos, speed);
             for (auto p: currentOrbit) {
-                if (std::abs(p.first) <= planetSize && std::abs(p.second) <= planetSize) {
+                if (isInsidePlanet(p, gameResponse.gameInfo)) {
                     safeOrbit = false;
                     break;
                 }
@@ -114,15 +114,16 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
                 auto gravity = get_gravity(pos);
                 std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
                 commands.push_back(makeMoveCommand(shipid, move)); // gravity + gravity turned 90 degrees
-                auto nextPos = predict_movement(pos, speed, move).first;
-                if (!role && isClose(nextPos, enemyPrediction, 1)) {
-                    commands.push_back(makeDestructCommand(shipid));
-                }
                 continue;
             }
         } else {
             // follow enemy as attacker
             auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
+
+            auto nextPos = predict_movement(pos, speed, move).first;
+            if (isClose(nextPos, enemyPrediction, 1)) {
+                commands.push_back(makeDestructCommand(shipid));
+            }
             if (move.first != 0 || move.second != 0) {
                 commands.push_back(makeMoveCommand(shipid, move));
                 continue;
