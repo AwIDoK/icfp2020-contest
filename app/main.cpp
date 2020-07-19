@@ -100,24 +100,33 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         std::pair<int, int> pos{ship.x, ship.y};
         std::pair<int, int> speed{ship.speed_x, ship.speed_y};
 
-        bool safeOrbit = true;
-        auto currentOrbit = calculateTrajectory(pos, speed);
-        for (auto p: currentOrbit) {
-            if (std::abs(p.first) <= planetSize && std::abs(p.second) <= planetSize) {
-                safeOrbit = false;
-                break;
+        if (ship.isDefender) {
+            bool safeOrbit = true;
+            auto currentOrbit = calculateTrajectory(pos, speed);
+            for (auto p: currentOrbit) {
+                if (std::abs(p.first) <= planetSize && std::abs(p.second) <= planetSize) {
+                    safeOrbit = false;
+                    break;
+                }
             }
-        }
 
-        if (!safeOrbit) {
-            auto gravity = get_gravity(pos);
-            std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
-            commands.push_back(makeMoveCommand(shipid, move)); // gravity + gravity turned 90 degrees
-            auto nextPos = predict_movement(pos, speed, move).first;
-            if (!role && isClose(nextPos, enemyPrediction, 1)) {
-                commands.push_back(makeDestructCommand(shipid));
+            if (!safeOrbit) {
+                auto gravity = get_gravity(pos);
+                std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
+                commands.push_back(makeMoveCommand(shipid, move)); // gravity + gravity turned 90 degrees
+                auto nextPos = predict_movement(pos, speed, move).first;
+                if (!role && isClose(nextPos, enemyPrediction, 1)) {
+                    commands.push_back(makeDestructCommand(shipid));
+                }
+                continue;
             }
-            continue;
+        } else {
+            // follow enemy as attacker
+            auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
+            if (move.first != 0 || move.second != 0) {
+                commands.push_back(makeMoveCommand(shipid, move));
+                continue;
+            }
         }
 
         auto nextPos = predict_movement(pos, speed, {0, 0}).first;
@@ -137,15 +146,6 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
                 commands.push_back(makeShootCommand(shipid,
                                             enemyPrediction,
                                                     attack_power));
-            }
-            continue;
-        }
-
-        // follow enemy as attacker
-        if (!ship.isDefender) {
-            auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
-            if (move.first != 0 || move.second != 0) {
-                commands.push_back(makeMoveCommand(shipid, move));
             }
             continue;
         }
