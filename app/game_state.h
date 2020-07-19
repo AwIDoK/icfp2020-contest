@@ -17,6 +17,6 @@ struct GameState {
     }
 
     GameState() {
-        
+
     }
 };

@@ -15,12 +15,15 @@ struct ShipInfo {
     int32_t unknown;
 
     ShipInfo(const AlienData& data) {
-        const auto& ship = data.getVector()[0].getVector();
+        const auto& vector = data.getVector();
+
+        const auto& ship = vector[0].getVector();
+
         role = ship[0].getNumber();
         id = ship[1].getNumber();
+
         x = ship[2].getPair().first().getNumber();
         y = ship[2].getPair().second().getNumber();
-
         speed_x = ship[3].getPair().first().getNumber();
         speed_y = ship[3].getPair().second().getNumber();
 

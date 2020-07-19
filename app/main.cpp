@@ -144,7 +144,7 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
 }
 
 int main(int argc, char* argv[]) {
-	const std::string serverUrl(argv[1]);
+    const std::string serverUrl(argv[1]);
 	const int64_t playerKey(std::stoll(argv[2]));
 
 	std::cout << "ServerUrl: " << serverUrl << "; PlayerKey: " << playerKey << std::endl;
