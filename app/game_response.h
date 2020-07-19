@@ -22,4 +22,5 @@ struct GameResponse {
         gameStatus = vector[1].getNumber();
         gameInfo = StaticGameInfo(vector[2]);
         gameState = GameState(vector[3]);
+    }
 };

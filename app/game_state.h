@@ -15,4 +15,8 @@ struct GameState {
             ships.emplace_back(ship);
         }
     }
+
+    GameState() {
+        
+    }
 };

@@ -12,4 +12,7 @@ struct StaticGameInfo {
         role = vector[1].getNumber();
     }
 
+    StaticGameInfo() {
+    }
+
 };
