@@ -6,6 +6,8 @@
 #include "translator.h"
 #include "game_response.h"
 
+std::pair<int, int> oldEnemyPosition{};
+int samePositionCount = 0;
 
 AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
 	auto encoded = encodeAlien(data);
@@ -135,6 +137,15 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
 
     ShipInfo enemyShip = getEnemyShip(role, gameResponse);
     auto enemyPrediction = predictNextPosition(enemyShip);
+    std::pair<int, int> enemyPosition{enemyShip.x, enemyShip.y};
+
+    if (enemyPosition == oldEnemyPosition) {
+        samePositionCount++;
+    } else {
+        oldEnemyPosition = enemyPosition;
+        samePositionCount = 0;
+    }
+
 
     for (auto const& ship : gameResponse.gameState.ships) {
         if (ship.role != role) {
@@ -175,7 +186,15 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         // try to shoot
         int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
         if (attack_power > 60) {
-            commands.push_back(makeShootCommand(shipid, VectorPair<AlienData>(enemyPrediction.first, enemyPrediction.second), attack_power));
+            if (samePositionCount >= 2 && enemyShip.params.power > 0) {
+                commands.push_back(makeShootCommand(shipid,
+                                                    VectorPair<AlienData>(enemyPosition.first, enemyPosition.second),
+                                                    attack_power));
+            } else {
+                commands.push_back(makeShootCommand(shipid,
+                                            VectorPair<AlienData>(enemyPrediction.first, enemyPrediction.second),
+                                                    attack_power));
+            }
             continue;
         }
     }
