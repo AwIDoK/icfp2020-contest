@@ -46,6 +46,10 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
         auto nMe = predictShipState(me, move);
         auto nEnemy = samePositionCount >= 2 ? enemy : predictShipState(enemy, {0, 0});
 
+        if (isBadPosition(nMe, gameInfo)) {
+            continue;
+        }
+
         if (getDistance2(nMe, nEnemy) < bestDistance) {
             bestDistance = getDistance2(nMe, nEnemy);
             bestMove = move;
