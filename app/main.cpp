@@ -3,128 +3,19 @@
 #include <string>
 #include "httplib.h"
 #include "alien_data.h"
-#include "translator.h"
 #include "game_response.h"
+#include "comms.h"
+#include "simulation.h"
+
+using move_t = std::pair<int, int>;
+using pos_t = std::pair<int, int>;
 
 std::pair<int, int> oldEnemyPosition{};
 int samePositionCount = 0;
 
-AlienData send(httplib::Client& client, const std::string& serverUrl, const AlienData& data) {
-	auto encoded = encodeAlien(data);
-	std::cout << "sending " << data.to_string() << ' ' << encoded << std::endl;
-	const std::shared_ptr<httplib::Response> serverResponse = 
-		client.Post((serverUrl + "/aliens/send").c_str(), encoded.c_str(), "text/plain");
-
-	if (!serverResponse) {
-		std::cout << "Unexpected server response:\nNo response from server" << std::endl;
-		return 1;
-	}
-	
-	if (serverResponse->status != 200) {
-		std::cout << "Unexpected server response:\nHTTP code: " << serverResponse->status
-		          << "\nResponse body: " << serverResponse->body << std::endl;
-		return 2;
-	}
-
-	std::cout << "Server response: " << serverResponse->body << std::endl;
-    return decodeAlien(serverResponse->body);
-}
-
-
-AlienData makeJoinRequest(int64_t playerKey) {
-	auto requestTypeData = 2;
-	auto unknownVec = std::vector<AlienData>();
-	return std::vector<AlienData>({requestTypeData, playerKey, unknownVec});
-}
-
-
-AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
-	auto requestTypeData = 3;
-	std::vector<AlienData> shipParams;
-	if (StaticGameInfo(gameResponse.getVector()[2]).role) {
-        shipParams = std::vector<AlienData>({70, 64, 10, 1});
-	} else {
-        shipParams = std::vector<AlienData>({134, 64, 10, 1});
-    }
-	return std::vector<AlienData>({requestTypeData, playerKey, shipParams});
-}
-
-AlienData makeMoveCommand(int64_t id, AlienData const& move) {
-    return std::vector<AlienData>({0, id, move});
-}
-
-AlienData makeDestructCommand(int64_t id) {
-    return std::vector<AlienData>({1, id});
-}
-
-AlienData makeShootCommand(int64_t id, AlienData const& position, int64_t power) {
-    return std::vector<AlienData>({2, id, position, power});
-}
-
-AlienData makeCommandsRequest(int64_t playerKey, const std::vector<AlienData>& commandList) {
-    auto requestTypeData = 4;
-    return std::vector<AlienData>({requestTypeData, playerKey, commandList});
-}
-
-int signum(int x) {
-    if (x == 0) {
-        return 0;
-    }
-    return x > 0 ? 1 : -1;
-}
-
-std::pair<int, int> get_gravity(std::pair<int, int> position) {
-    int x = position.first;
-    int y = position.second;
-
-    int gx = 0;
-    int gy = 0;
-
-    // separate ifs because if x == y gravity works in both directions
-    // same for x == -y
-    if (std::abs(x) >= std::abs(y)) {
-        gx = -signum(x);
-    }
-
-    if (std::abs(x) <= std::abs(y)) {
-        gy = -signum(y);
-    }
-
-    return {gx, gy};
-}
-
-// what position and speed we will get if now we have position and speed and send move command
-std::pair<std::pair<int, int>, std::pair<int, int>> predict_movement(std::pair<int, int> position, std::pair<int, int> speed, std::pair<int, int> moveCommand) {
-    auto gravity = get_gravity(position);
-
-    std::pair newSpeed{speed.first + gravity.first - moveCommand.first,
-                       speed.second + gravity.second - moveCommand.second};
-    std::pair newPos{position.first + newSpeed.first, position.second + newSpeed.second};
-
-    return {newPos, newSpeed};
-}
-
-std::pair<int, int> predictNextPosition(ShipInfo const& info) {
-    return predict_movement({info.x, info.y}, {info.speed_x, info.speed_y}, {0, 0}).first;
-}
-
-std::vector<std::pair<int, int>> calculateOrbit(std::pair<int, int> position, std::pair<int, int> speed) {
-    constexpr int LOOKAHEAD = 50;
-    std::vector<std::pair<int, int>> result(LOOKAHEAD);
-
-    for (int i = 0; i < LOOKAHEAD; i++) {
-        auto tmp = predict_movement(position, speed, {0, 0});
-        position = tmp.first;
-        speed = tmp.second;
-        result[i] = position;
-    }
-
-    return result;
-}
-
 ShipInfo getEnemyShip(bool role, GameResponse const& gameResponse) {
     for (auto const& ship : gameResponse.gameState.ships) {
-        if (ship.role != role && ship.params.divisionFactor > 0) {
+        if (ship.isDefender != role && ship.params.divisionFactor > 0) {
             return ship;
         }
     }
@@ -135,14 +26,82 @@ bool isClose(std::pair<int, int> a, std::pair<int, int> b, int maxD) {
     return std::abs(a.first - b.first) <= maxD && std::abs(a.second - b.second) <= maxD;
 }
 
+std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameInfo gameInfo) {
+    std::vector<std::pair<int, int>> moves = {
+            {1, 1},
+            {1, 0},
+            {1, -1},
+            {0, 1},
+            {0, 0},
+            {0, -1},
+            {-1, 1},
+            {-1, 0},
+            {-1, -1},
+    };
+
+    int64_t bestDistance = 1e16;
+    std::pair<int, int> bestMove{0, 0};
+    pos_t atPos{0, 0};
+
+    for (const auto move: moves) {
+        auto nMe = predictShipState(me, move);
+        auto nEnemy = samePositionCount >= 2 ? enemy : predictShipState(enemy, {0, 0});
+
+        if (isBadPosition(nMe, gameInfo)) {
+            continue;
+        }
+
+        if (getDistance2(nMe, nEnemy) < bestDistance) {
+            bestDistance = getDistance2(nMe, nEnemy);
+            bestMove = move;
+            atPos = {nMe.x, nMe.y};
+        }
+
+        auto myTrajectory = calculateTrajectory(nMe);
+        auto enemyTrajectory = calculateTrajectory(nEnemy);
+
+        for (int i = 0; i < myTrajectory.size(); i++) {
+            auto myPos = myTrajectory[i];
+            auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[i];
+
+            if (isBadPosition(myPos, gameInfo)) {
+                break;
+            }
+
+            auto distance = getDistance2(myPos, enemyPos);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestMove = move;
+                atPos = myPos;
+            }
+        }
+    }
+
+    std::cout << "chose " << bestMove.first << " " << bestMove.second
+                << " with dist " << bestDistance
+                << " at pos " << atPos.first << " " << atPos.second << "\n";
+
+    return bestMove;
+}
+
+int countAliveEnemies(GameResponse const& gameResponse) {
+    int count = 0;
+    for (auto const& ship : gameResponse.gameState.ships) {
+        if (ship.isDefender != gameResponse.gameInfo.isDefender && ship.params.divisionFactor > 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
 std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
-    int planetSize = gameResponse.gameInfo.planetSize;
-    bool role = gameResponse.gameInfo.role;
+    bool role = gameResponse.gameInfo.isDefender;
 
     ShipInfo enemyShip = getEnemyShip(role, gameResponse);
     auto enemyPrediction = predictNextPosition(enemyShip);
     std::pair<int, int> enemyPosition{enemyShip.x, enemyShip.y};
+    int enemiesAlive = countAliveEnemies(gameResponse);
 
     if (enemyPosition == oldEnemyPosition) {
         samePositionCount++;
@@ -151,9 +110,8 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         samePositionCount = 0;
     }
 
-
     for (auto const& ship : gameResponse.gameState.ships) {
-        if (ship.role != role) {
+        if (ship.isDefender != role) {
             // skipping ship
             continue;
         }
@@ -162,24 +120,34 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         std::pair<int, int> pos{ship.x, ship.y};
         std::pair<int, int> speed{ship.speed_x, ship.speed_y};
 
-        bool safeOrbit = true;
-        auto currentOrbit = calculateOrbit(pos, speed);
-        for (auto p: currentOrbit) {
-            if (std::abs(p.first) <= planetSize && std::abs(p.second) <= planetSize) {
-                safeOrbit = false;
-                break;
+        if (ship.isDefender) {
+            bool safeOrbit = true;
+            auto currentOrbit = calculateTrajectory(pos, speed);
+            for (auto p: currentOrbit) {
+                if (isInsidePlanet(p, gameResponse.gameInfo)) {
+                    safeOrbit = false;
+                    break;
+                }
             }
-        }
 
-        if (!safeOrbit) {
-            auto gravity = get_gravity(pos);
-            std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
-            commands.push_back(makeMoveCommand(shipid, VectorPair<AlienData>(move.first, move.second))); // gravity + gravity turned 90 degrees
+            if (!safeOrbit) {
+                auto gravity = get_gravity(pos);
+                std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
+                commands.push_back(makeMoveCommand(shipid, move)); // gravity + gravity turned 90 degrees
+                continue;
+            }
+        } else {
+            // follow enemy as attacker
+            auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
+
             auto nextPos = predict_movement(pos, speed, move).first;
-            if (!role && isClose(nextPos, enemyPrediction, 1)) {
+            if (enemiesAlive == 1 && isClose(nextPos, enemyPrediction, 1)) {
                 commands.push_back(makeDestructCommand(shipid));
             }
-            continue;
+            if (move.first != 0 || move.second != 0) {
+                commands.push_back(makeMoveCommand(shipid, move));
+                continue;
+            }
         }
 
         auto nextPos = predict_movement(pos, speed, {0, 0}).first;
@@ -191,13 +159,13 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         // try to shoot
         int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
         if (attack_power > 60) {
-            if (samePositionCount >= 2 && enemyShip.params.power > 0) {
+            if (samePositionCount >= 2 && enemyShip.params.power > 0) { // shoot at static target
                 commands.push_back(makeShootCommand(shipid,
-                                                    VectorPair<AlienData>(enemyPosition.first, enemyPosition.second),
+                                                    enemyPosition,
                                                     attack_power));
-            } else {
+            } else { // shoot at moving target predicted position
                 commands.push_back(makeShootCommand(shipid,
-                                            VectorPair<AlienData>(enemyPrediction.first, enemyPrediction.second),
+                                            enemyPrediction,
                                                     attack_power));
             }
             continue;
