@@ -13,13 +13,29 @@ using pos_t = std::pair<int, int>;
 std::pair<int, int> oldEnemyPosition{};
 int samePositionCount = 0;
 
-ShipInfo getEnemyShip(bool role, GameResponse const& gameResponse) {
-    for (auto const& ship : gameResponse.gameState.ships) {
-        if (ship.isDefender != role && ship.params.divisionFactor > 0) {
-            return ship;
+ShipInfo getEnemyShip(const ShipInfo& mine, bool role, GameResponse const& gameResponse) {
+    int b = -1;
+    int64_t bd = 1e16;
+    for (size_t i = 0; i < gameResponse.gameState.ships.size(); i++) {
+        if (gameResponse.gameState.ships[i].isDefender != role && gameResponse.gameState.ships[i].params.divisionFactor > 0) {
+            auto dist = getDistance2(mine, gameResponse.gameState.ships[i]);
+            if (dist < bd) {
+                bd = dist;
+                b = i;
+            }
         }
     }
-    return gameResponse.gameState.ships[0]; // should never happen
+    return gameResponse.gameState.ships[b];
+}
+
+std::vector<ShipInfo> getEnemyShips(bool role, GameResponse const& gameResponse) {
+    std::vector<ShipInfo> result;
+    for (auto const& ship : gameResponse.gameState.ships) {
+        if (ship.isDefender != role && ship.params.divisionFactor > 0) {
+            result.push_back(ship);
+        }
+    }
+    return result;
 }
 
 bool isClose(std::pair<int, int> a, std::pair<int, int> b, int maxD) {
@@ -133,22 +149,24 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
     bool role = gameResponse.gameInfo.isDefender;
 
-    ShipInfo enemyShip = getEnemyShip(role, gameResponse);
-    auto enemyPrediction = predictNextPosition(enemyShip);
-    std::pair<int, int> enemyPosition{enemyShip.x, enemyShip.y};
+    
     int enemiesAlive = countAliveEnemies(gameResponse);
 
-    if (enemyPosition == oldEnemyPosition) {
-        samePositionCount++;
-    } else {
-        oldEnemyPosition = enemyPosition;
-        samePositionCount = 0;
-    }
+
 
     for (auto const& ship : gameResponse.gameState.ships) {
         if (ship.isDefender != role) {
             // skipping ship
             continue;
+        }
+        ShipInfo enemyShip = getEnemyShip(ship, role, gameResponse);
+        auto enemyPrediction = predictNextPosition(enemyShip);
+        std::pair<int, int> enemyPosition{enemyShip.x, enemyShip.y};
+        if (enemyPosition == oldEnemyPosition) {
+            samePositionCount++;
+        } else {
+            oldEnemyPosition = enemyPosition;
+            samePositionCount = 0;
         }
 
         int shipid = ship.id;
