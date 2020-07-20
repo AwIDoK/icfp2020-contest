@@ -67,7 +67,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
             for (int i = 0; i < myTrajectory.size(); i++) {
                 auto myPos = myTrajectory[i];
                 auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[i];
-                distance = getDistance2(myPos, enemyPos);
+                auto distance = getDistance2(myPos, enemyPos);
                 if ((minimize && distance < bestDistance) || (!minimize && distance > bestDistance)) {
                     bestDistance = distance;
                     bestMove = move;
