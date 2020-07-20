@@ -115,3 +115,8 @@ bool isBadPosition(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
 bool isBadPosition(ShipInfo const& ship, StaticGameInfo const& gameInfo) {
     return isInsidePlanet({ship.x, ship.y}, gameInfo) || !isInsideWorld({ship.x, ship.y}, gameInfo);
 }
+
+
+bool isCloseToCorner(std::pair<int, int> pos, StaticGameInfo const& gameInfo) {
+    return std::abs(std::abs(pos.first) - gameInfo.worldSize) + std::abs(std::abs(pos.second) - gameInfo.worldSize) < 50;
+}

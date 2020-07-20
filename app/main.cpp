@@ -71,10 +71,15 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
                 }
                 if (goodTrajectory) {
                     int64_t minimumDistance = 1e16;
+                    bool closeToCorner = false;
                     for (int l = 0; l < myTrajectory.size(); l++) {
                         auto myPos = myTrajectory[l];
                         auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[l];
                         auto distance = getDistance2(myPos, enemyPos);
+
+                        if (isCloseToCorner(myPos, gameInfo)) {
+                            closeToCorner = true;
+                        }
 
                         if (minimumDistance > distance) {
                             minimumDistance = distance;
@@ -85,6 +90,9 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
                             bestMove = moves[i];
                             atPos = myPos;
                         }
+                    }
+                    if (!minimize && closeToCorner) {
+                        minimumDistance *= 0.6;
                     }
                     if (!minimize && minimumDistance > bestDistance) {
                         bestDistance = minimumDistance;
