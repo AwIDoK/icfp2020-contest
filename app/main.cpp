@@ -91,9 +91,9 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
                             }
                         }
                         if (!minimize) {
-                            minimumDistance *= ((8 - price) / 8.);
+                            minimumDistance *= ((6 - price) / 6.);
                         } else {
-                            minimumDistance /= ((8 - price) / 8.);
+                            minimumDistance /= ((6 - price) / 6.);
                         }
                         if (!minimize && closeToCorner) {
                             minimumDistance *= 0.6;
@@ -220,7 +220,7 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
 
         // try to shoot
         int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
-        if (attack_power > 60) {
+        if (attack_power > 60 && !ship.isDefender) {
             auto currentDist = getDistance2({ship.x, ship.y}, enemyPrediction);
             bool hasBetter = false;
             for (int i = 0; i < std::min(std::size_t(10), bestEnemyTrajectory.size()); i++) {
