@@ -77,14 +77,24 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
     return bestMove;
 }
 
+int countAliveEnemies(GameResponse const& gameResponse) {
+    int count = 0;
+    for (auto const& ship : gameResponse.gameState.ships) {
+        if (ship.isDefender != gameResponse.gameInfo.isDefender && ship.params.divisionFactor > 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
 std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
-    int planetSize = gameResponse.gameInfo.planetSize;
-    bool role = gameResponse.gameInfo.role;
+    bool role = gameResponse.gameInfo.isDefender;
 
     ShipInfo enemyShip = getEnemyShip(role, gameResponse);
     auto enemyPrediction = predictNextPosition(enemyShip);
     std::pair<int, int> enemyPosition{enemyShip.x, enemyShip.y};
+    int enemiesAlive = countAliveEnemies(gameResponse);
 
     if (enemyPosition == oldEnemyPosition) {
         samePositionCount++;
@@ -92,7 +102,6 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         oldEnemyPosition = enemyPosition;
         samePositionCount = 0;
     }
-
 
     for (auto const& ship : gameResponse.gameState.ships) {
         if (ship.isDefender != role) {
@@ -125,7 +134,7 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
             auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
 
             auto nextPos = predict_movement(pos, speed, move).first;
-            if (isClose(nextPos, enemyPrediction, 1)) {
+            if (enemiesAlive == 1 && isClose(nextPos, enemyPrediction, 1)) {
                 commands.push_back(makeDestructCommand(shipid));
             }
             if (move.first != 0 || move.second != 0) {

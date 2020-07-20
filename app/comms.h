@@ -43,7 +43,7 @@ AlienData makeJoinRequest(int64_t playerKey) {
 AlienData makeStartRequest(int64_t playerKey, const AlienData& gameResponse) {
     auto requestTypeData = 3;
     std::vector<AlienData> shipParams;
-    if (StaticGameInfo(gameResponse.getVector()[2]).role) {
+    if (StaticGameInfo(gameResponse.getVector()[2]).isDefender) {
         shipParams = std::vector<AlienData>({70, 64, 10, 1});
     } else {
         shipParams = std::vector<AlienData>({134, 64, 10, 1});
