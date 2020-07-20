@@ -35,7 +35,7 @@ AlienData send(httplib::Client& client, const std::string& serverUrl, const Alie
 
 AlienData makeJoinRequest(int64_t playerKey) {
     auto requestTypeData = 2;
-    auto unknownVec = std::vector<AlienData>({AlienData(192496425430)});
+    auto unknownVec = std::vector<AlienData>({192496425430ll, 114342420ll});
     return std::vector<AlienData>({requestTypeData, playerKey, unknownVec});
 }
 

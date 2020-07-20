@@ -64,7 +64,7 @@ std::pair<int, int> predictNextPosition(ShipInfo const& info) {
 }
 
 std::vector<std::pair<int, int>> calculateTrajectory(std::pair<int, int> position, std::pair<int, int> speed) {
-    constexpr int LOOKAHEAD = 100;
+    constexpr int LOOKAHEAD = 40;
     std::vector<std::pair<int, int>> result(LOOKAHEAD);
 
     for (int i = 0; i < LOOKAHEAD; i++) {

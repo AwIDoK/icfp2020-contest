@@ -26,7 +26,7 @@ bool isClose(std::pair<int, int> a, std::pair<int, int> b, int maxD) {
     return std::abs(a.first - b.first) <= maxD && std::abs(a.second - b.second) <= maxD;
 }
 
-std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameInfo gameInfo) {
+std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameInfo gameInfo, bool minimize=true) {
     std::vector<std::pair<int, int>> moves = {
             {1, 1},
             {1, 0},
@@ -40,6 +40,9 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
     };
 
     int64_t bestDistance = 1e16;
+    if (!minimize) {
+        bestDistance = 0;
+    }
     std::pair<int, int> bestMove{0, 0};
     pos_t atPos{0, 0};
 
@@ -50,29 +53,35 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
         if (isBadPosition(nMe, gameInfo)) {
             continue;
         }
-
-        if (getDistance2(nMe, nEnemy) < bestDistance) {
-            bestDistance = getDistance2(nMe, nEnemy);
+        auto distance = getDistance2(nMe, nEnemy);
+        if ((minimize && distance < bestDistance) || (!minimize && distance > bestDistance)) {
+            bestDistance = distance;
             bestMove = move;
             atPos = {nMe.x, nMe.y};
         }
 
         auto myTrajectory = calculateTrajectory(nMe);
         auto enemyTrajectory = calculateTrajectory(nEnemy);
-
+        bool goodTrajectory = true;
         for (int i = 0; i < myTrajectory.size(); i++) {
             auto myPos = myTrajectory[i];
             auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[i];
 
             if (isBadPosition(myPos, gameInfo)) {
+                goodTrajectory = false;
                 break;
             }
-
-            auto distance = getDistance2(myPos, enemyPos);
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestMove = move;
-                atPos = myPos;
+        }
+        if (goodTrajectory) {
+            for (int i = 0; i < myTrajectory.size(); i++) {
+                auto myPos = myTrajectory[i];
+                auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[i];
+                distance = getDistance2(myPos, enemyPos);
+                if ((minimize && distance < bestDistance) || (!minimize && distance > bestDistance)) {
+                    bestDistance = distance;
+                    bestMove = move;
+                    atPos = myPos;
+                }
             }
         }
     }
@@ -121,6 +130,14 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         std::pair<int, int> speed{ship.speed_x, ship.speed_y};
 
         if (ship.isDefender) {
+            
+            // hide from enemy
+            auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo, false);
+            if (move.first != 0 || move.second != 0) {
+                commands.push_back(makeMoveCommand(shipid, move));
+                continue;
+            }
+            /*
             bool safeOrbit = true;
             auto currentOrbit = calculateTrajectory(pos, speed);
             for (auto p: currentOrbit) {
@@ -132,10 +149,10 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
 
             if (!safeOrbit) {
                 auto gravity = get_gravity(pos);
-                std::pair<int, int> move{gravity.first + gravity.second, gravity.second - gravity.first};
+                std::pair<int, int> move{signum(gravity.first + gravity.second), signum(gravity.second - gravity.first)};
                 commands.push_back(makeMoveCommand(shipid, move)); // gravity + gravity turned 90 degrees
                 continue;
-            }
+            }*/
         } else {
             // follow enemy as attacker
             auto move = bestNavigatingMove(ship, enemyShip, gameResponse.gameInfo);
