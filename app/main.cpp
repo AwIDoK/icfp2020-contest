@@ -59,7 +59,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
                     for (auto x : mov_seq) {
                         price += x != std::make_pair(0, 0);
                     }
-                    auto myTrajectory = calculateTrajectory(me, );
+                    auto myTrajectory = calculateTrajectory(me, mov_seq);
                     auto enemyTrajectory = calculateTrajectory(enemy);
                     if (samePositionCount >= 3) {
                         for (auto& e : enemyTrajectory) {
