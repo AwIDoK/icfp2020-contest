@@ -247,7 +247,7 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
                     hasBetter = true;
                 }
             }
-            if (!hasBetter || ship.energy_limit - ship.current_energy > 100){
+            if ((!hasBetter) || (ship.energy_limit - ship.current_energy) > 100){
                 if (samePositionCount >= 2 && enemyShip.params.power > 0) { // shoot at static target
                     commands.push_back(makeShootCommand(shipid,
                                                         enemyPosition,
