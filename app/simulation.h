@@ -63,12 +63,12 @@ std::pair<int, int> predictNextPosition(ShipInfo const& info) {
     return predictNextPosition(info, {0, 0});
 }
 
-std::vector<std::pair<int, int>> calculateTrajectory(std::pair<int, int> position, std::pair<int, int> speed) {
+std::vector<std::pair<int, int>> calculateTrajectory(std::pair<int, int> position, std::pair<int, int> speed, const std::vector<std::pair<int, int>>& moves={}) {
     constexpr int LOOKAHEAD = 40;
     std::vector<std::pair<int, int>> result(LOOKAHEAD);
 
     for (int i = 0; i < LOOKAHEAD; i++) {
-        auto tmp = predict_movement(position, speed, {0, 0});
+        auto tmp = predict_movement(position, speed, i < moves.size() ? moves[i] : std::make_pair(0, 0));
         position = tmp.first;
         speed = tmp.second;
         result[i] = position;
@@ -77,8 +77,8 @@ std::vector<std::pair<int, int>> calculateTrajectory(std::pair<int, int> positio
     return result;
 }
 
-std::vector<std::pair<int, int>> calculateTrajectory(ShipInfo const& ship) {
-    return calculateTrajectory({ship.x, ship.y}, {ship.speed_x, ship.speed_y});
+std::vector<std::pair<int, int>> calculateTrajectory(ShipInfo const& ship, const std::vector<std::pair<int, int>>& moves = {}) {
+    return calculateTrajectory({ship.x, ship.y}, {ship.speed_x, ship.speed_y}, moves);
 }
 
 // todo: heat predictions

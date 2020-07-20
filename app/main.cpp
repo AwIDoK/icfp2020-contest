@@ -26,6 +26,9 @@ bool isClose(std::pair<int, int> a, std::pair<int, int> b, int maxD) {
     return std::abs(a.first - b.first) <= maxD && std::abs(a.second - b.second) <= maxD;
 }
 
+
+std::vector<std::pair<int, int>> bestTrajectory;
+std::vector<std::pair<int, int>> bestEnemyTrajectory;
 std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameInfo gameInfo, bool minimize=true) {
     std::vector<std::pair<int, int>> moves = {
             {1, 1},
@@ -40,27 +43,23 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
     };
 
     int64_t bestDistance = 1e16;
+    bestTrajectory = {};
+    bestEnemyTrajectory = {};
     if (!minimize) {
         bestDistance = 0;
     }
     std::pair<int, int> bestMove{0, 0};
     pos_t atPos{0, 0};
-
     for (int i = 0; i < moves.size(); i++) {
         for (int j = 0; j < moves.size(); j++) {
             for (int k = 0; k < moves.size(); k++) {
-                auto nMe1 = predictShipState(me, moves[i]);
-                auto nMe2 = predictShipState(nMe1, moves[j]);
-                auto nMe3 = predictShipState(nMe2, moves[k]);
-                auto nEnemy1 = samePositionCount >= 2 ? enemy : predictShipState(enemy, {0, 0});
-                auto nEnemy2 = samePositionCount >= 2 ? nEnemy1 : predictShipState(nEnemy1, {0, 0});
-                auto nEnemy3 = samePositionCount >= 2 ? nEnemy2 : predictShipState(nEnemy2, {0, 0});
-
-                if (isBadPosition(nMe1, gameInfo) || isBadPosition(nMe2, gameInfo) || isBadPosition(nMe3, gameInfo)) {
-                    continue;
+                auto myTrajectory = calculateTrajectory(me);
+                auto enemyTrajectory = calculateTrajectory(enemy);
+                if (samePositionCount >= 3) {
+                    for (auto& e : enemyTrajectory) {
+                        e = {enemy.x, enemy.y};
+                    }
                 }
-                auto myTrajectory = calculateTrajectory(nMe3);
-                auto enemyTrajectory = calculateTrajectory(nEnemy3);
                 bool goodTrajectory = true;
                 for (int l = 0; l < std::min(size_t(10), myTrajectory.size()); l++) {
                     auto myPos = myTrajectory[l];
@@ -84,28 +83,20 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
                         if (minimumDistance > distance) {
                             minimumDistance = distance;
                         }
-
-                        if (minimize && distance < bestDistance) {
-                            bestDistance = distance;
-                            bestMove = moves[i];
-                            atPos = myPos;
-                        }
                     }
                     if (!minimize && closeToCorner) {
                         minimumDistance *= 0.6;
                     }
-                    if (!minimize && minimumDistance > bestDistance) {
+                    if ((!minimize && minimumDistance > bestDistance) || (minimize && minimumDistance < bestDistance)) {
                         bestDistance = minimumDistance;
+                        bestEnemyTrajectory = enemyTrajectory;
+                        bestTrajectory = myTrajectory;
                         bestMove = moves[i];
                     }
                 }
             }
         }
     }
-
-    std::cout << "chose " << bestMove.first << " " << bestMove.second
-                << " with dist " << bestDistance
-                << " at pos " << atPos.first << " " << atPos.second << "\n";
     if (minimize && bestDistance == int64_t(1e16)) {
         return {100500, 100500};
     }
@@ -217,16 +208,26 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         // try to shoot
         int attack_power = std::max(0, std::min(ship.params.max_attack_power, ship.energy_limit - ship.current_energy));
         if (attack_power > 60) {
-            if (samePositionCount >= 2 && enemyShip.params.power > 0) { // shoot at static target
-                commands.push_back(makeShootCommand(shipid,
-                                                    enemyPosition,
-                                                    attack_power));
-            } else { // shoot at moving target predicted position
-                commands.push_back(makeShootCommand(shipid,
-                                            enemyPrediction,
-                                                    attack_power));
+            auto currentDist = getDistance2({ship.x, ship.y}, enemyPrediction);
+            bool hasBetter = false;
+            for (int i = 0; i < std::min(std::size_t(10), bestEnemyTrajectory.size()); i++) {
+                auto dist = getDistance2(bestTrajectory[i], bestEnemyTrajectory[i]);
+                if (dist < currentDist && currentDist - dist > 1000 && currentDist - dist / currentDist * 10 > 3) {
+                    hasBetter = true;
+                }
             }
-            continue;
+            if (!hasBetter){
+                if (samePositionCount >= 2 && enemyShip.params.power > 0) { // shoot at static target
+                    commands.push_back(makeShootCommand(shipid,
+                                                        enemyPosition,
+                                                        attack_power));
+                } else { // shoot at moving target predicted position
+                    commands.push_back(makeShootCommand(shipid,
+                                                enemyPrediction,
+                                                        attack_power));
+                }
+                continue;
+            }
         }
     }
 
