@@ -41,6 +41,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
 
     int64_t bestDistance = 1e16;
     std::pair<int, int> bestMove{0, 0};
+    pos_t atPos{0, 0};
 
     for (const auto move: moves) {
         auto nMe = predictShipState(me, move);
@@ -53,6 +54,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
         if (getDistance2(nMe, nEnemy) < bestDistance) {
             bestDistance = getDistance2(nMe, nEnemy);
             bestMove = move;
+            atPos = {nMe.x, nMe.y};
         }
 
         auto myTrajectory = calculateTrajectory(nMe);
@@ -70,9 +72,14 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
             if (distance < bestDistance) {
                 bestDistance = distance;
                 bestMove = move;
+                atPos = myPos;
             }
         }
     }
+
+    std::cout << "chose " << bestMove.first << " " << bestMove.second
+                << " with dist " << bestDistance
+                << " at pos " << atPos.first << " " << atPos.second << "\n";
 
     return bestMove;
 }
