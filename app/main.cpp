@@ -53,45 +53,57 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
     for (int i = 0; i < moves.size(); i++) {
         for (int j = 0; j < moves.size(); j++) {
             for (int k = 0; k < moves.size(); k++) {
-                auto myTrajectory = calculateTrajectory(me, {moves[i], moves[j], moves[k]});
-                auto enemyTrajectory = calculateTrajectory(enemy);
-                if (samePositionCount >= 3) {
-                    for (auto& e : enemyTrajectory) {
-                        e = {enemy.x, enemy.y};
+                for (int m = 0; m < moves.size(); m++) {
+                    auto mov_seq = {moves[i], moves[j], moves[k], moves[m]};
+                    auto price = 0;
+                    for (auto x : mov_seq) {
+                        price += x != std::make_pair(0, 0);
                     }
-                }
-                bool goodTrajectory = true;
-                for (int l = 0; l < std::min(size_t(10), myTrajectory.size()); l++) {
-                    auto myPos = myTrajectory[l];
-                    if (isBadPosition(myPos, gameInfo)) {
-                        goodTrajectory = false;
-                        break;
+                    auto myTrajectory = calculateTrajectory(me, );
+                    auto enemyTrajectory = calculateTrajectory(enemy);
+                    if (samePositionCount >= 3) {
+                        for (auto& e : enemyTrajectory) {
+                            e = {enemy.x, enemy.y};
+                        }
                     }
-                }
-                if (goodTrajectory) {
-                    int64_t minimumDistance = 1e16;
-                    bool closeToCorner = false;
-                    for (int l = 0; l < myTrajectory.size(); l++) {
+                    bool goodTrajectory = true;
+                    for (int l = 0; l < std::min(size_t(10), myTrajectory.size()); l++) {
                         auto myPos = myTrajectory[l];
-                        auto enemyPos = samePositionCount >= 2 ? std::make_pair(enemy.x, enemy.y) : enemyTrajectory[l];
-                        auto distance = getDistance2(myPos, enemyPos);
-
-                        if (isCloseToCorner(myPos, gameInfo)) {
-                            closeToCorner = true;
-                        }
-
-                        if (minimumDistance > distance) {
-                            minimumDistance = distance;
+                        if (isBadPosition(myPos, gameInfo)) {
+                            goodTrajectory = false;
+                            break;
                         }
                     }
-                    if (!minimize && closeToCorner) {
-                        minimumDistance *= 0.6;
-                    }
-                    if ((!minimize && minimumDistance > bestDistance) || (minimize && minimumDistance < bestDistance)) {
-                        bestDistance = minimumDistance;
-                        bestEnemyTrajectory = enemyTrajectory;
-                        bestTrajectory = myTrajectory;
-                        bestMove = moves[i];
+                    if (goodTrajectory) {
+                        int64_t minimumDistance = 1e16;
+                        bool closeToCorner = false;
+                        for (int l = 0; l < myTrajectory.size(); l++) {
+                            auto myPos = myTrajectory[l];
+                            auto enemyPos = enemyTrajectory[l];
+                            auto distance = getDistance2(myPos, enemyPos);
+
+                            if (isCloseToCorner(myPos, gameInfo)) {
+                                closeToCorner = true;
+                            }
+
+                            if (minimumDistance > distance) {
+                                minimumDistance = distance;
+                            }
+                        }
+                        if (!minimize) {
+                            minimumDistance *= ((8 - price) / 8.);
+                        } else {
+                            minimumDistance /= ((8 - price) / 8.);
+                        }
+                        if (!minimize && closeToCorner) {
+                            minimumDistance *= 0.6;
+                        }
+                        if ((!minimize && minimumDistance > bestDistance) || (minimize && minimumDistance < bestDistance)) {
+                            bestDistance = minimumDistance;
+                            bestEnemyTrajectory = enemyTrajectory;
+                            bestTrajectory = myTrajectory;
+                            bestMove = moves[i];
+                        }
                     }
                 }
             }
@@ -115,6 +127,7 @@ int countAliveEnemies(GameResponse const& gameResponse) {
     }
     return count;
 }
+
 
 std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
     std::vector<AlienData> commands;
