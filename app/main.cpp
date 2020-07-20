@@ -53,7 +53,7 @@ std::pair<int, int> bestNavigatingMove(ShipInfo me, ShipInfo enemy, StaticGameIn
     for (int i = 0; i < moves.size(); i++) {
         for (int j = 0; j < moves.size(); j++) {
             for (int k = 0; k < moves.size(); k++) {
-                auto myTrajectory = calculateTrajectory(me);
+                auto myTrajectory = calculateTrajectory(me, {moves[i], moves[j], moves[k]});
                 auto enemyTrajectory = calculateTrajectory(enemy);
                 if (samePositionCount >= 3) {
                     for (auto& e : enemyTrajectory) {
