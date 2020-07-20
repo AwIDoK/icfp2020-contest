@@ -223,13 +223,13 @@ std::vector<AlienData> runStrategy(const GameResponse& gameResponse) {
         if (attack_power > 60 && !ship.isDefender) {
             auto currentDist = getDistance2({ship.x, ship.y}, enemyPrediction);
             bool hasBetter = false;
-            for (int i = 0; i < std::min(std::size_t(3), bestEnemyTrajectory.size()); i++) {
-                auto dist = getDistance2(bestTrajectory[i], bestEnemyTrajectory[i]);
+            for (int i = 0; i < std::min(std::size_t(3), bestEnemyTrajectory.size() - 1); i++) {
+                auto dist = getDistance2(bestTrajectory[i], bestEnemyTrajectory[i + 1]);
                 if (dist < currentDist && currentDist - dist > 2000 && (currentDist - dist) / currentDist * 10 > 5) {
                     hasBetter = true;
                 }
             }
-            if (!hasBetter){
+            if (!hasBetter || ship.energy_limit - ship.current_energy > 100){
                 if (samePositionCount >= 2 && enemyShip.params.power > 0) { // shoot at static target
                     commands.push_back(makeShootCommand(shipid,
                                                         enemyPosition,
